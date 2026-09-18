@@ -13,7 +13,15 @@
     "test:e2e": "playwright test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build && playwright test --list"
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build && playwright test --list && npm run db:check",
+    "auth:schema": "tsx scripts/auth-schema.mts",
+    "auth:schema:check": "tsx scripts/auth-schema.mts --check",
+    "db:generate": "drizzle-kit generate --name=initial_v1_1",
+    "db:migrate": "tsx scripts/database-tool.ts migrate",
+    "db:studio": "tsx scripts/database-tool.ts studio",
+    "db:check": "drizzle-kit check && npm run auth:schema:check",
+    "db:verify": "tsx scripts/verify-database.ts",
+    "test:db": "tsx scripts/test-database.ts"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "1.7.5",
@@ -32,11 +40,13 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-hook-form": "7.88.0",
+    "server-only": "0.0.1",
     "shadcn": "4.21.0",
     "tw-animate-css": "1.4.0",
     "zod": "4.6.5"
   },
   "devDependencies": {
+    "@next/env": "16.3.5",
     "@playwright/test": "1.63.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "7.0.1",
@@ -46,12 +56,14 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "6.1.1",
+    "auth": "1.7.5",
     "drizzle-kit": "0.31.10",
     "eslint": "9.39.5",
     "eslint-config-next": "16.3.5",
     "jsdom": "30.1.0",
     "prettier": "3.9.8",
     "tailwindcss": "^4",
+    "tsx": "4.23.13",
     "typescript": "^5",
     "vitest": "5.0.1"
   },

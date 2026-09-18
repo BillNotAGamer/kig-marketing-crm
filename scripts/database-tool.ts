@@ -1,0 +1,68 @@
+import { spawnSync } from "node:child_process";
+import { dirname, join, resolve } from "node:path";
+import { createRequire } from "node:module";
+import postgres from "postgres";
+import { requireDevelopmentDatabase, safeDatabaseError } from "./database-env";
+
+async function main() {
+  const command = process.argv[2];
+  if (command !== "migrate" && command !== "studio")
+    throw new Error("Expected migrate or studio.");
+  const url = requireDevelopmentDatabase();
+  const client = postgres(url, { max: 1, connect_timeout: 10, prepare: false });
+  try {
+    // Read-only preflight. Initial migration is restricted to an empty public schema.
+    const tables = await client<
+      { table_name: string }[]
+    >`SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'`;
+    const journal =
+      await client`SELECT to_regclass('drizzle.__drizzle_migrations') AS journal`;
+    const types =
+      await client`SELECT t.typname FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace WHERE n.nspname='public' AND t.typtype='e'`;
+    if (
+      command === "migrate" &&
+      (tables.length > 0 || types.length > 0 || journal[0]?.journal !== null)
+    ) {
+      throw new Error(
+        "Initial migration requires an empty development schema and no migration journal. Existing schema/data requires a separate explicit review; nothing was mutated.",
+      );
+    }
+  } finally {
+    await client.end();
+  }
+  const require = createRequire(resolve("package.json"));
+  const cli = join(dirname(require.resolve("drizzle-kit")), "bin.cjs");
+  const args = [
+    cli,
+    command,
+    ...(command === "studio" ? ["--host=127.0.0.1"] : []),
+  ];
+  if (command === "studio")
+    console.log("Starting development-only Drizzle Studio on 127.0.0.1:4983.");
+  // Capture CLI output so unexpected failures cannot echo a database URL.
+  const result = spawnSync(process.execPath, args, {
+    encoding: "utf8",
+    env: process.env,
+  });
+  if (result.status !== 0)
+    throw new Error(
+      "Drizzle command failed; output withheld to protect connection credentials.",
+    );
+  console.log(
+    command === "migrate"
+      ? "Development migration applied. Run npm run db:verify and npm run test:db next."
+      : "Drizzle Studio session ended.",
+  );
+}
+main().catch((error: unknown) => {
+  const expected =
+    error instanceof Error &&
+    (error.message.startsWith("Database command requires") ||
+      error.message.startsWith("An authorized") ||
+      error.message.startsWith("Database identity") ||
+      error.message.startsWith("Initial migration") ||
+      error.message.startsWith("Drizzle command") ||
+      error.message.startsWith("Expected"));
+  console.error(expected ? error.message : safeDatabaseError(error));
+  process.exitCode = 1;
+});

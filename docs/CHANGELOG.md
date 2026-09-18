@@ -14,3 +14,12 @@
 - Phase 0 scaffolding only. No application migration or production deployment.
 
 Ordinary progress remains immutable; HEAD-only audited administrative correction is a separate operation, not ordinary submission on behalf of another assignee.
+
+## 2026-09-18 - Phase 1 technical foundation (V1.1)
+
+- Transactional PostgreSQL/Postgres.js database foundation implemented.
+- Better Auth 1.7.5 schema generated from shared configuration, with reviewed deterministic persistence normalization.
+- Five application V1.1 tables, six enums, restrictive FKs, checks and indexes implemented.
+- Initial Drizzle migration generated and reviewed; repeat generation reports no changes.
+- Initial migration verified against explicitly authorized development Neon PostgreSQL; live catalogs and real PostgreSQL constraint tests passed with fixtures rolled back. Auth regeneration remains deterministic and Drizzle reports no schema drift. No production mutation.
+- Closure corrected Drizzle CLI resolution, development environment loading before Vitest, and exact PostgreSQL RESTRICT error assertions; schema and migration SQL remained unchanged.

@@ -213,3 +213,23 @@ created_at       timestamptz NOT NULL
 ```
 
 Task/daily/asset/notification foreign keys trong thiết kế là ON DELETE RESTRICT. Không thay role/ownership/lifecycle/uniqueness/password/banned/Drive deletion/final HEAD/server boundary nếu chưa có business decision và bilingual docs update. [Authorization](05-AUTHORIZATION-MODEL-VN.md).
+
+## Bằng chứng triển khai Phase 1 - 2026-09-18 (giữ nguyên V1.1)
+
+Schema tổng hợp tại `src/db/schema/index.ts`. Bốn bảng xác thực: `user`, `session`, `account`, `verification`; năm bảng ứng dụng: `task`, `task_daily_update`, `task_asset`, `notification`, `audit_log`. Cả chín khóa chính và các khóa ngoại người dùng/công việc dùng PostgreSQL UUID. ID ứng dụng mặc định `gen_random_uuid()`; Better Auth cấu hình `advanced.database.generateId="uuid"`. Tất cả 13 khóa ngoại dùng ON DELETE RESTRICT, kể cả account/session; không xóa dây chuyền.
+
+Enum PostgreSQL: `task_status` (OPEN, COMPLETED, CANCELLED), `task_priority` (LOW, NORMAL, HIGH, URGENT), `task_progress_status` (COMPLETED, NOT_COMPLETED), `task_asset_provider` (GOOGLE_DRIVE), `task_asset_type` (IMAGE, VIDEO, DOCUMENT, SPREADSHEET, PRESENTATION, PDF, OTHER), `notification_type` (TASK_ASSIGNED, TASK_UPDATED, TASK_REASSIGNED, TASK_CANCELLED). NOT_REPORTED được suy ra, không lưu.
+
+14 CHECK bảo vệ vai trò chuẩn duy nhất; tiêu đề công việc không rỗng; thứ tự ngày, vòng đời và cặp thông tin xóa mềm công việc; lý do báo cáo và thông tin hiệu chỉnh; ID nhà cung cấp/URL nguồn tài sản không rỗng và cặp thông tin xóa mềm; tiêu đề/nội dung thông báo không rỗng; action/entity type nhật ký không rỗng. Báo cáo có `UNIQUE(task_id, report_date)`. Email người dùng và token phiên giữ tính duy nhất do CLI sinh. Tài sản có duy nhất từng `(task_id, provider, provider_file_id) WHERE deleted_at IS NULL`, cho phép đính kèm lại sau xóa mềm.
+
+14 index tường minh gồm ba index tra cứu xác thực và 11 index ứng dụng: công việc theo người nhận/ngày, người nhận/trạng thái, trạng thái/ngày, hạn chót (đều chỉ bản ghi chưa xóa), người tạo; báo cáo theo người/ngày; tài sản theo công việc chưa xóa và duy nhất tài sản chưa xóa; thông báo theo người/đã đọc/thời điểm tạo; audit theo người thực hiện/thời điểm và loại thực thể/ID/thời điểm. Sáu index là partial. Quan hệ nhiều khóa ngoại tới user có tên rõ ràng khớp hai chiều. Xuất kiểu insert/select suy ra cho năm bảng ứng dụng.
+
+assigned_date, due_date, report_date là DATE dạng chuỗi; mọi thời điểm sự kiện là TIMESTAMPTZ. Diễn giải ngày nghiệp vụ dùng Asia/Ho_Chi_Minh. Người dùng thường không sửa báo cáo; audit chỉ thêm về mặt nghiệp vụ. Lớp dịch vụ ở phase sau thực thi các quy tắc này; không tạo repository sửa/xóa tổng quát.
+
+`npm run auth:schema` dùng CLI ổn định `auth@1.7.5`, đọc cấu hình dùng chung `src/lib/auth/options.ts` qua `scripts/auth-schema.config.mts`. Lưu nguyên đầu ra tại `auth.generated.ts`; chuẩn hóa xác định tạo `auth.ts` với TIMESTAMPTZ và CHECK vai trò. Mặc định role/banned bắt buộc và khóa ngoại RESTRICT xuất phát từ metadata plugin dùng chung. Không đưa bản thô vào schema migration tổng hợp. `auth:schema:check` sinh lại và so sánh cả hai bản. CLI ngoại tuyến dùng secret ngẫu nhiên tạm thời riêng cho công cụ, không mở DB và cảnh báo vì chưa có base URL; runtime kiểm tra thông tin môi trường thật.
+
+Postgres.js hỗ trợ transaction cho Railway + Neon. Singleton DB server-only khởi tạo lười và tái sử dụng kết nối khi hot reload; adapter Drizzle PostgreSQL của Better Auth bật transaction. UI không import DB.
+
+Quy trình: sinh lại auth, duyệt diff, `npm run db:generate`, duyệt SQL, rồi `npm run db:migrate` chỉ với DB phát triển trống đã được cho phép rõ ràng. Migration đầu tiên `drizzle/0000_initial_v1_1.sql` cùng snapshot/journal quản lý bằng Git; không sửa SQL thủ công. `db:migrate`, `db:verify`, `db:studio`, `test:db` yêu cầu `KIG_DATABASE_ENV=development` và DATABASE_URL phát triển riêng tư. Preflight từ chối bảng/enum public hoặc journal Drizzle đã tồn tại; không xóa dữ liệu để vượt chốt. Từ chối tên đích có dấu hiệu production nhưng người vận hành vẫn phải xác minh danh tính đích. Studio chỉ dùng phát triển; không dùng push làm quy trình chính.
+
+`db:check` kiểm tra metadata migration và sinh lại auth ngoại tuyến. `db:verify` kiểm tra catalog thật. `test:db` kiểm tra ràng buộc PostgreSQL bằng fixture trong transaction được rollback, không cấp thông tin đăng nhập hay seed vĩnh viễn. Lần triển khai ngoại tuyến ban đầu chưa có DB phát triển được cho phép. Khi đóng Phase 1, migration đầu tiên không thay đổi đã được áp dụng trên PostgreSQL phát triển được cho phép; catalog thật và kiểm thử tích hợp có transaction đều đạt, không còn bản ghi fixture. Không tạo DB production, HEAD ban đầu, route HTTP auth hoặc dịch vụ Phase 2.

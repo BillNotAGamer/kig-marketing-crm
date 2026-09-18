@@ -117,3 +117,9 @@ Complete task, report incomplete, correct progress, reassign, cancel, soft delet
 - Audit tồn tại cho tất cả privileged mutations bắt buộc.
 
 Không tạo fake business tests ở Phase 0. Mọi business change phải cập nhật hai ngôn ngữ/tests; code/docs discrepancy phải báo thay vì âm thầm chọn. [INV-01–20](README-VN.md) bắt buộc.
+
+## Nền tảng auth Phase 1 - 2026-09-18
+
+Giữ nguyên V1.1. Auth server-only dùng cấu hình chung, adapter Drizzle PostgreSQL bật transaction, email/password, tắt đăng ký công khai và tự xóa tài khoản, ID UUID. Admin plugin chỉ có HEAD, DEPUTY, EMPLOYEE; mặc định EMPLOYEE. Chỉ HEAD được user create/list/get/update/set-role/ban/set-password/set-email. Mọi vai trò không có quyền quản trị session; DEPUTY/EMPLOYEE không quản trị user. Không cấp wildcard, bỏ qua qua adminUserIds, delete, impersonate hoặc impersonate-admins. Hook và CHECK DB từ chối vai trò sai hoặc nhiều vai trò/ngăn cách dấu phẩy. user.role là chuẩn; banned=false là ACTIVE, banned=true là INACTIVE, mặc định bắt buộc EMPLOYEE/false. Không có cột kích hoạt trùng lặp.
+
+Không mở route auth HTTP. Đây là primitive lưu trữ/phân quyền, chưa phải dịch vụ phân quyền CRM Phase 2. Trước khi mở handler phải bảo vệ HEAD ACTIVE cuối cùng trong transaction, duy trì vô hiệu hóa vĩnh viễn (ban expiry không tự kích hoạt lại INACTIVE), bảo vệ trường role/ban, quản trị mật khẩu chỉ HEAD và chính sách tự phục vụ đã duyệt. Ẩn UI không phải phân quyền. Quyền task, bất biến báo cáo, xác thực nhà cung cấp/preview tài sản và lưu audit thuộc dịch vụ server ở phase sau. Xóa liên kết CRM không bao giờ xóa tệp Drive nguồn. Xem phần Phase 1 trong thiết kế DB song ngữ về sinh schema và xác minh.
