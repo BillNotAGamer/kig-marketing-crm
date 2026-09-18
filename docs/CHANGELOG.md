@@ -42,3 +42,10 @@ Ordinary progress remains immutable; HEAD-only audited administrative correction
 - English/Vietnamese technical documentation synchronized; business baseline V1.1 and the applied initial migration preserved. PostgreSQL tests include direct HTTP denial, ownership/access transfer, dependent-history retention, injected audit/notice failures and competing cancel/reassign/delete/edit.
 
 - Phase 3 closure passed 92 offline/security tests, 12 real PostgreSQL tests and 12 desktop/mobile Chromium tests; authenticated light/dark/mobile visual verification passed. Live catalogs verified, auth artifacts stayed deterministic and Drizzle reported no changes. Cleanup left all nine tables empty, one existing migration journal entry and no test triggers. No Phase 4 implementation.
+
+## 2026-09-18 - Phase 4 Daily Progress (V1.1)
+
+- Current-assignee-only transactional COMPLETED/NOT_COMPLETED reporting, mandatory bounded reasons, immutable official history and derived NOT_REPORTED implemented.
+- Server business-date calculation, Task/date uniqueness and same-day reassignment consequence preserved. Only Daily Progress performs normal completion.
+- Dedicated HEAD latest-report/status-changing correction, paired metadata, audited reopening/completion and cancellation protection implemented; bilingual business/technical safeguards synchronized without version bump.
+- Existing advisory/row locking coordinates progress with Task/account administration; tests cover competing report/cancel/reassign and real audit/task failure rollback. Mobile shadcn reporting/correction dialogs and protected detail history added. No schema change or Phase 5 functionality.

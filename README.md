@@ -1,6 +1,6 @@
 # KIG Marketing CRM
 
-Internal Marketing task-management CRM for KIG Holding. The repository includes persistence, authentication, server-side RBAC, HEAD-only user administration and Phase 3 Task Core/lifecycle. Daily Progress and subsequent features are deferred.
+Internal Marketing task-management CRM for KIG Holding. The repository includes persistence, authentication, server-side RBAC, HEAD-only user administration, Task Core/lifecycle and Phase 4 Daily Progress. Google Drive Task Assets and subsequent features are deferred.
 
 Use Node.js **24 LTS** (`>=24 <25`); `.nvmrc` and `.node-version` pin 24.19.0. npm 11.17.0 is the recorded installation tool; npm 10 and 11 are permitted. On Windows PowerShell, use `npm.cmd` if execution policy blocks `npm.ps1`.
 
@@ -16,7 +16,7 @@ npm run dev
 
 Open http://localhost:3000/login. Login uses the private configured development database; authenticated users enter `/app`. HEAD users can administer accounts at `/users` and change their own password at `/account/password`. The root placeholder remains available. Quicksand and light/dark/system themes apply throughout.
 
-Task work is at `/tasks`, with protected detail/create and HEAD-only editing/reassignment/cancellation/soft deletion. HEAD/DEPUTY see team work; EMPLOYEE sees current assigned work only. Assignment eligibility and lifecycle are enforced by the transactional server service. Completion belongs to Phase 4 Daily Progress and is not available yet.
+Task work is at `/tasks`, with protected detail/create and HEAD-only editing/reassignment/cancellation/soft deletion. HEAD/DEPUTY see team work; EMPLOYEE sees current assigned work only. Assignment eligibility and lifecycle are enforced by the transactional server service. Task Detail includes Phase 4 Daily Progress: current-assignee reporting once per business date, immutable history and audited latest-report HEAD correction. Completion occurs through reporting; correction is the sole reopening path. Google Drive Task Assets and later phases remain deferred.
 
 Validate the foundation:
 
@@ -59,4 +59,4 @@ npm run auth:bootstrap-head
 
 The command refuses when an ACTIVE HEAD exists, never prints credentials, and atomically creates the credential account and bootstrap audit evidence. Passwords must contain 12–128 characters and cannot be entirely whitespace; passwords are never trimmed. No default credentials or production seed exists. Production bootstrap requires a separately reviewed operator workflow at deployment time; this command currently permits development only.
 
-For the initialized development database, run `npm run db:verify` and `npm run test:db`; do not repeat the initial migration command. The PostgreSQL suite includes authentication, Task authorization/ownership/lifecycle/atomicity, endpoint denial and competing HEAD/Task mutations. These security tests require an isolated development baseline without a permanent ACTIVE HEAD. Browser tests start a loopback production server matching `BETTER_AUTH_URL`, serialize contexts to preserve production login rate limits, and create/clean isolated random fixtures. Run them before provisioning a permanent development HEAD. Credential-bearing browser traces are disabled. Phases 2 and 3 add no migration.
+For the initialized development database, run `npm run db:verify` and `npm run test:db`; do not repeat the initial migration command. The PostgreSQL suite includes authentication, Task authorization/ownership/lifecycle/atomicity, endpoint denial and competing HEAD/Task mutations. These security tests require an isolated development baseline without a permanent ACTIVE HEAD. Browser tests start a loopback production server matching `BETTER_AUTH_URL`, serialize contexts to preserve production login rate limits, and create/clean isolated random fixtures. Run them before provisioning a permanent development HEAD. Credential-bearing browser traces are disabled. Phases 2, 3 and 4 add no migration. Progress suites cover date/uniqueness/correction, real rollback and competing lifecycle transitions; browser progress scenarios deliberately cool down between role-heavy logins to preserve the production sign-in limiter.

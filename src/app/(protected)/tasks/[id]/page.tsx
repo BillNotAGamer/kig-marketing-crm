@@ -4,6 +4,8 @@ import { requireSession } from "@/lib/auth/session";
 import { readTaskPage } from "@/lib/tasks/page";
 import { getTasks } from "@/lib/tasks/server";
 import { TaskActions } from "@/components/tasks/task-actions";
+import { ProgressSection } from "@/components/progress/progress-section";
+import { getProgress } from "@/lib/progress/server";
 
 export default async function TaskPage({
   params,
@@ -12,6 +14,10 @@ export default async function TaskPage({
 }) {
   const actor = await requireSession();
   const task = await readTaskPage((await params).id);
+  const progress = await getProgress().getTaskProgress(
+    new Headers(await headers()),
+    task.id,
+  );
   const options =
     actor.role === "HEAD" && task.status === "OPEN"
       ? await getTasks().listAssignees(new Headers(await headers()))
@@ -53,6 +59,7 @@ export default async function TaskPage({
           </p>
         )}
       </article>
+      <ProgressSection taskId={task.id} view={progress} />
       {actor.role === "HEAD" && <TaskActions task={task} options={options} />}
     </>
   );

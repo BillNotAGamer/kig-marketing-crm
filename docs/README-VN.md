@@ -888,4 +888,8 @@ Node 24 LTS (>=24 <25), Next.js full-stack monolith, PostgreSQL/Neon + Drizzle s
 
 Business change phải cập nhật CẢ tiếng Anh/Việt và tests. Agent phải báo cáo code/docs discrepancy thay vì âm thầm chọn một bên.
 
+## Bảo vệ triển khai Daily Progress (Phase 4, giữ V1.1)
+
+Một báo cáo chính thức thuộc Task/ngày, không phải assignee/ngày. Giao lại sau báo cáo hôm nay giữ người báo cáo và lịch sử gốc; người nhận mới chờ ngày nghiệp vụ sau để gửi báo cáo thông thường khác. HEAD chỉ sửa báo cáo chính thức mới nhất, đổi COMPLETED ↔ NOT_COMPLETED với lý do hành chính bắt buộc và lý do chưa hoàn thành khi cần. Từ chối correction cùng trạng thái/chỉ sửa văn bản. Giữ ngày báo cáo/người báo cáo/thời điểm tạo gốc, audit before/after mọi correction; sửa COMPLETED sang NOT_COMPLETED là đường mở lại duy nhất. Correction không đảo ngược hủy Task và không áp dụng Task đã xóa mềm. Bảo vệ chronology/vòng đời này triển khai ngoại lệ correction được phân quyền riêng, giữ Version 1.1.
+
 [Database](04-DATABASE-DESIGN-VN.md) · [Authorization](05-AUTHORIZATION-MODEL-VN.md) · [English](README.md) · [Changelog](CHANGELOG.md).

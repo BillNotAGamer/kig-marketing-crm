@@ -164,6 +164,10 @@ Daily progress is immutable to ordinary users after submission. HEAD correction 
 
 INV-13: assets are independent of task metadata/ownership. INV-14: ordinary users attach only to own OPEN work. INV-15: only approved validated providers are previewed (Drive in V1). INV-16: preview failure never blocks the task. INV-17: removal never modifies/deletes source content. INV-18: at most one official daily report/task/business date. INV-19: ordinary reports immutable, HEAD corrections separate/audited. INV-20: UUID identifiers/user foreign keys with Better Auth PostgreSQL UUID configuration.
 
+### Daily Progress implementation safeguards (Phase 4, V1.1)
+
+One official report belongs to the Task/date, not the assignee/date. Reassignment after today's report preserves its original reporter/history; the new assignee waits until a later business date for another ordinary report. HEAD may correct only the latest official report, changing COMPLETED ↔ NOT_COMPLETED with mandatory administrative reason and incomplete reason when applicable. Same-status/text-only corrections are rejected. Correction preserves original report date/reporter/creation time and audits every before/after; correcting COMPLETED to NOT_COMPLETED is the only reopening path. Correction never undoes cancellation and is unavailable for soft-deleted tasks. These chronology/lifecycle safeguards implement the separately authorized correction exception without changing Version 1.1.
+
 See [database design](04-DATABASE-DESIGN.md), [authorization](05-AUTHORIZATION-MODEL.md), and [changelog](CHANGELOG.md).
 
 ---
