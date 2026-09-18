@@ -21,7 +21,8 @@
     "db:studio": "tsx scripts/database-tool.ts studio",
     "db:check": "drizzle-kit check && npm run auth:schema:check",
     "db:verify": "tsx scripts/verify-database.ts",
-    "test:db": "tsx scripts/test-database.ts"
+    "test:db": "tsx scripts/test-database.ts",
+    "auth:bootstrap-head": "tsx scripts/bootstrap-head.ts"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "1.7.5",

@@ -5,7 +5,8 @@ export default defineConfig({
     environment: "node",
     include: ["src/db/**/*.integration.ts"],
     fileParallelism: false,
-    testTimeout: 30_000,
+    // Multi-step auth tests include real network roundtrips and password hashing.
+    testTimeout: 120_000,
     hookTimeout: 30_000,
   },
 });
