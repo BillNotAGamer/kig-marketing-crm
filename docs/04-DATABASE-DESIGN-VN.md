@@ -277,3 +277,18 @@ Bảo vệ trùng lặp tệp đang hoạt động được đảm bảo ở c�
 Gỡ bỏ tài sản thực hiện xóa mềm bằng cách đặt `deleted_at = now()` và `deleted_by_id = actor.id`, đồng thời ghi nhật ký `REMOVE_TASK_ASSET` trong cùng một transaction. Không bao giờ thực hiện `DELETE` SQL trên bảng `task_asset`. CRM không bao giờ gọi API xóa hoặc đưa tệp vào thùng rác của Google Drive; Google Drive hoàn toàn là nguồn chỉ đọc đối với CRM.
 
 DTO an toàn chỉ trả về các thuộc tính nghiệp vụ cần thiết (`id`, `fileName`, `assetType`, `provider`, `sourceUrl`, `openUrl`, `previewUrl`, `canRemove`, `createdAt`, `createdByName`). URL xem trước được tạo nghiêm ngặt từ các domain Google đáng tin cậy (`drive.google.com`, `docs.google.com`). Bộ kiểm thử PostgreSQL thật chứng minh từ chối trùng lặp, cách ly giữa người dùng, đính kèm lại sau xóa mềm, tính nguyên tử của audit và rollback khi gặp lỗi mô phỏng. Toàn bộ fixture kiểm thử tự dọn dẹp sạch sẽ, không để lại dữ liệu rác.
+
+## Lưu trữ Lịch & Trải nghiệm Công việc Mobile Phase 6 - 2026-09-19 (giữ nguyên V1.1)
+
+Phase 6 là giai đoạn trình diễn và truy vấn dựa trên dữ liệu Task và Daily Progress hiện có. Không yêu cầu bất kỳ migration schema cơ sở dữ liệu nào, không tạo thêm bảng mới và không thay đổi enum. Bản migration ban đầu `drizzle/0000_initial_v1_1.sql` và journal hoàn toàn giữ nguyên như Phase 1.
+
+Ngữ nghĩa hiển thị trên Lịch được suy ra trực tiếp từ các cột `task.assigned_date` và `task.due_date` có sẵn:
+
+- `assignedDate` ứng với mốc GIAO / BẮT ĐẦU ("Giao").
+- `dueDate` ứng với mốc HẠN CHÓT ("Hạn").
+- Nếu `assignedDate === dueDate`, công việc hiển thị dưới dạng một mốc kết hợp ("Giao & Hạn"), không nhân đôi dữ liệu.
+- Tuyệt đối không tự tạo mốc thời lượng giả định cho các ngày nằm giữa `assignedDate` và `dueDate`.
+- Công việc đã xóa mềm (`deleted_at IS NOT NULL`) bị loại trừ nghiêm ngặt khỏi mọi truy vấn lịch và các khung nhìn ngày.
+- Mọi công việc chưa xóa ở tất cả trạng thái vòng đời (`OPEN`, `COMPLETED`, `CANCELLED`) đều được hiển thị với cách trình bày trực quan phù hợp.
+
+Các truy vấn ngày được giới hạn nghiêm ngặt tối đa 62 ngày thông qua dịch vụ `listCalendarTasks()`. Truy vấn lọc ngày ngay tại cấp PostgreSQL: `(assigned_date BETWEEN from AND to) OR (due_date BETWEEN from AND to)` sử dụng các index hiện có. Khi khoảng ngày truy vấn bao gồm ngày nghiệp vụ hôm nay (`Asia/Ho_Chi_Minh`), trạng thái tiến độ hàng ngày chính thức được batch join qua `task_daily_update` mà không phát sinh truy vấn N+1. Hoàn toàn không gọi API Google Drive từ các dịch vụ Lịch.

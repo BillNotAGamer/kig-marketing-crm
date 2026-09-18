@@ -637,3 +637,15 @@ Phase 5 implements Task Asset permissions adhering to approved baseline V1.1:
 Google Drive authorization is strictly decoupled from CRM authorization. The CRM verifies metadata via a server-side service account with minimal read-only scope (`https://www.googleapis.com/auth/drive.metadata.readonly`). The service account never requests write permissions. User input is validated against a strict host allowlist (`drive.google.com`, `docs.google.com`); arbitrary URLs, javascript/data schemes, and folder URLs are rejected. Client requests cannot supply file IDs, names, MIME types, or asset types.
 
 Inline previews are rendered inside sandboxed iframes from canonical Google preview endpoints under CSP `frame-src 'self' https://drive.google.com https://docs.google.com;`. If an end-user lacks permission in their own Google account to view the file, the CRM UI provides a prominent "Mở trên Google Drive ↗" fallback link. Soft removal in CRM never calls Google Drive deletion or permission modification APIs.
+
+## Phase 6 Calendar & Mobile Task Experience authorization - 2026-09-19 (V1.1)
+
+Phase 6 implements read-oriented Calendar and Mobile Task query authorization strictly inheriting Task resource authorization rules:
+
+- HEAD and DEPUTY read all non-deleted team tasks within the queried calendar date range (`from` to `to`). Assignee identities are exposed on task cards for team visibility.
+- EMPLOYEE reads only non-deleted tasks currently assigned to self (`task.assignedToId === actor.id`). Foreign tasks assigned to other employees are strictly filtered at the database level and never leaked into month cells, week columns, agenda cards, counts, badges, or error payloads.
+- Soft-deleted tasks (`deleted_at IS NOT NULL`) are never returned to any role.
+- Calendar is strictly read-oriented: no client-side drag-and-drop reassignment, status changes, date resizing, or direct metadata mutation is exposed.
+- All task mutations continue through existing authoritative Phase 3/4/5 command endpoints with full validation, locking, and auditing.
+- GET `/api/calendar` enforces canonical server sessions and rejects banned/inactive accounts with 401 Unauthorized. Strict Zod query validation rejects malformed ISO dates, inverted date ranges (`from > to`), and query windows exceeding 62 calendar days with controlled 400 Bad Request. Responses use `Cache-Control: no-store`.
+- Mobile Bottom Navigation respects role boundaries and existing protected shell layouts without hardcoding inaccessible destinations.

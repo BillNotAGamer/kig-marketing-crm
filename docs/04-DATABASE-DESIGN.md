@@ -1077,3 +1077,18 @@ Active duplicate protection is enforced at the database level by the existing pa
 Soft removal sets `deleted_at = now()` and `deleted_by_id = actor.id` and appends a `REMOVE_TASK_ASSET` audit row in the same transaction. The row is never hard-deleted from `task_asset`. No Google Drive delete or trash API call is ever made; Drive remains completely read-only to KIG CRM.
 
 Safe DTO projection exposes only necessary business attributes (`id`, `fileName`, `assetType`, `provider`, `sourceUrl`, `openUrl`, `previewUrl`, `canRemove`, `createdAt`, `createdByName`). Previews are constructed exclusively using trusted Google domains (`drive.google.com`, `docs.google.com`). Real PostgreSQL integration tests verify active duplicate rejection, cross-user isolation, soft-deletion reattachment, audit atomicity, and injected failure rollbacks. All test fixtures clean up test-created data leaving zero lingering rows.
+
+## Phase 6 Calendar & Mobile Task Experience persistence - 2026-09-19 (V1.1 unchanged)
+
+Phase 6 is a presentation and query phase over existing Task and Daily Progress data. It requires zero database schema migrations, zero new tables, and zero enum changes. The initial migration `drizzle/0000_initial_v1_1.sql` and migration journal remain identical to Phase 1.
+
+Calendar semantics are derived purely from existing `task.assigned_date` and `task.due_date` columns:
+
+- `assignedDate` maps to an ASSIGNED / START marker ("Giao").
+- `dueDate` maps to a DEADLINE marker ("Hạn").
+- If `assignedDate === dueDate`, the task produces a single combined marker ("Giao & Hạn") rather than duplicate markers.
+- No synthetic duration markers are generated for intermediate dates between `assignedDate` and `dueDate`.
+- Soft-deleted tasks (`deleted_at IS NOT NULL`) are strictly excluded from all calendar queries and date views.
+- Non-deleted tasks across all lifecycle states (`OPEN`, `COMPLETED`, `CANCELLED`) remain visible with appropriate visual affordances.
+
+Date queries are strictly bounded to at most 62 calendar days via `listCalendarTasks()` service. The query applies date filtering at the PostgreSQL level: `(assigned_date BETWEEN from AND to) OR (due_date BETWEEN from AND to)` under existing indexes. When the query range includes current business today (`Asia/Ho_Chi_Minh`), today's official daily progress status is batch-joined via `task_daily_update` without N+1 queries. No external Google Drive API calls are invoked from Calendar services.

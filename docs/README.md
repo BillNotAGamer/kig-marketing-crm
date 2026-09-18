@@ -168,6 +168,10 @@ INV-13: assets are independent of task metadata/ownership. INV-14: ordinary user
 
 One official report belongs to the Task/date, not the assignee/date. Reassignment after today's report preserves its original reporter/history; the new assignee waits until a later business date for another ordinary report. HEAD may correct only the latest official report, changing COMPLETED ↔ NOT_COMPLETED with mandatory administrative reason and incomplete reason when applicable. Same-status/text-only corrections are rejected. Correction preserves original report date/reporter/creation time and audits every before/after; correcting COMPLETED to NOT_COMPLETED is the only reopening path. Correction never undoes cancellation and is unavailable for soft-deleted tasks. These chronology/lifecycle safeguards implement the separately authorized correction exception without changing Version 1.1.
 
+### Calendar & Mobile Task Experience implementation safeguards (Phase 6, V1.1)
+
+Calendar is a read-oriented presentation and query layer over existing Task and Daily Progress data. It introduces zero database migrations, zero new tables, and zero schema changes. Calendar markers derive directly from `assignedDate` (ASSIGNED / START marker "Giao") and `dueDate` (DEADLINE marker "Hạn"). When `assignedDate === dueDate`, markers deduplicate into a single combined marker ("Giao & Hạn"). No synthetic duration markers are generated for days between assignment and deadline. All calendar calculations use zero-timezone-shift date arithmetic, Monday-first week layouts, and `Asia/Ho_Chi_Minh` for the current business date. Calendar visibility strictly inherits Task resource authorization: HEAD and DEPUTY read team tasks, EMPLOYEE reads own assigned tasks, and soft-deleted tasks are excluded. The mobile view provides an agenda-first layout (~390px) with a 7-day compact week strip, persistent bottom navigation, and an Employee Today operational hub without horizontal overflow. No Google Drive API calls are executed by Calendar services.
+
 See [database design](04-DATABASE-DESIGN.md), [authorization](05-AUTHORIZATION-MODEL.md), and [changelog](CHANGELOG.md).
 
 ---

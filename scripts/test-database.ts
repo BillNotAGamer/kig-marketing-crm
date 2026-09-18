@@ -14,7 +14,7 @@ try {
   );
   const result = spawnSync(
     process.execPath,
-    [cli, "run", "--config", "vitest.db.config.mts"],
+    [cli, "run", "--config", "vitest.db.config.mts", ...process.argv.slice(2)],
     { stdio: "inherit", env: process.env },
   );
   process.exitCode = result.status ?? 1;

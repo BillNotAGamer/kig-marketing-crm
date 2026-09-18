@@ -182,3 +182,15 @@ Phase 5 triển khai phân quyền tài sản đính kèm (Deliverables / Task A
 Quyền truy cập trên Google Drive hoàn toàn độc lập với quyền trên CRM. CRM xác thực và đọc metadata qua tài khoản dịch vụ (Google Service Account) với phạm vi tối thiểu chỉ đọc metadata (`https://www.googleapis.com/auth/drive.metadata.readonly`). Service account không bao giờ yêu cầu quyền ghi. Đầu vào người dùng được kiểm tra qua danh sách host nghiêm ngặt (`drive.google.com`, `docs.google.com`); từ chối mọi URL ngoài, schema javascript/data hoặc URL thư mục. Client không thể can thiệp hoặc tự khai báo file ID, tên tệp, MIME type hay asset type.
 
 Bản xem trước trực tiếp được hiển thị trong iframe an toàn từ endpoint preview chuẩn của Google theo chính sách CSP `frame-src 'self' https://drive.google.com https://docs.google.com;`. Trường hợp tài khoản Google của người dùng không có quyền truy cập tệp trên Google Drive, giao diện CRM luôn cung cấp liên kết dự phòng "Mở trên Google Drive ↗". Thao tác gỡ bỏ tài sản trong CRM không bao giờ gọi API xóa hoặc sửa quyền của Google Drive.
+
+## Phân quyền Lịch & Trải nghiệm Công việc Mobile Phase 6 - 2026-09-19 (V1.1)
+
+Phase 6 triển khai phân quyền truy vấn Lịch và Công việc Mobile dạng chỉ đọc, kế thừa nghiêm ngặt quy tắc phân quyền tài nguyên Task:
+
+- HEAD và DEPUTY đọc tất cả công việc của nhóm chưa bị xóa trong khoảng ngày lịch được truy vấn (`from` đến `to`). Danh tính người được giao được hiển thị trên card công việc phục vụ theo dõi nhóm.
+- EMPLOYEE chỉ đọc các công việc chưa bị xóa đang được giao cho chính mình (`task.assignedToId === actor.id`). Công việc của nhân viên khác bị lọc triệt để ngay ở tầng cơ sở dữ liệu, tuyệt đối không lộ vào ô tháng, cột tuần, card agenda, số đếm, huy hiệu hoặc payload lỗi.
+- Công việc đã xóa mềm (`deleted_at IS NOT NULL`) không bao giờ được trả về cho bất kỳ vai trò nào.
+- Lịch hoạt động hoàn toàn theo cơ chế chỉ đọc: không hỗ trợ kéo-thả đổi người nhận, đổi trạng thái, co giãn ngày hoặc sửa trực tiếp metadata từ giao diện lịch.
+- Mọi thao tác cập nhật công việc tiếp tục thực hiện qua các endpoint lệnh Phase 3/4/5 có thẩm quyền với đầy đủ xác thực, khóa và ghi audit.
+- GET `/api/calendar` thực thi kiểm tra session server chuẩn và từ chối tài khoản bị cấm/vô hiệu hóa với lỗi 401 Unauthorized. Schema Zod nghiêm ngặt từ chối ngày ISO sai định dạng, khoảng ngày đảo ngược (`from > to`), và khoảng thời gian vượt quá 62 ngày với lỗi 400 Bad Request có kiểm soát. Header phản hồi sử dụng `Cache-Control: no-store`.
+- Thanh điều hướng đáy Mobile (Bottom Navigation) tuân thủ ranh giới vai trò và bố cục shell được bảo vệ sẵn có mà không gán cứng các điểm đến không có quyền truy cập.

@@ -20,7 +20,7 @@ import { requireDevelopmentDatabase } from "../../scripts/database-env";
 // Test-only committed fixtures for separate browser requests/connections.
 // Namespace ownership is checked before cleanup; never a production seed.
 export async function authFixtures(
-  phase: "phase2" | "phase3" | "phase4" | "phase5" = "phase2",
+  phase: "phase2" | "phase3" | "phase4" | "phase5" | "phase6" = "phase2",
 ) {
   const db = createDatabase(requireDevelopmentDatabase());
   const env = parseServerEnv(process.env);

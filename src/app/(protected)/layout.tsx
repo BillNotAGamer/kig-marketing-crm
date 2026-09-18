@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireSession } from "@/lib/auth/session";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { ThemeControls } from "@/components/theme-controls";
+import { MobileBottomNav } from "@/components/navigation/mobile-nav";
 
 export default async function ProtectedLayout({
   children,
@@ -38,6 +39,12 @@ export default async function ProtectedLayout({
             >
               Tasks
             </Link>
+            <Link
+              className="py-2 underline-offset-4 hover:underline"
+              href="/calendar"
+            >
+              Calendar
+            </Link>
             {actor.role === "HEAD" && (
               <>
                 <Link
@@ -57,12 +64,13 @@ export default async function ProtectedLayout({
           </nav>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-8">
+      <main className="mx-auto max-w-6xl space-y-6 px-4 py-8 pb-24 sm:px-8 sm:pb-8">
         {children}
       </main>
-      <footer className="mx-auto max-w-6xl px-4 pb-8 sm:px-8">
+      <footer className="mx-auto max-w-6xl px-4 pb-20 sm:px-8 sm:pb-8">
         <ThemeControls />
       </footer>
+      <MobileBottomNav />
     </div>
   );
 }

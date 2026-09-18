@@ -59,3 +59,17 @@ Ordinary progress remains immutable; HEAD-only audited administrative correction
 - Zero Drive mutations: CRM never calls Drive create, update, rename, delete, or permission APIs. Removing an asset in CRM leaves the Google Drive file untouched.
 - Sandboxed inline previews via CSP `frame-src 'self' https://drive.google.com https://docs.google.com;`, mobile-first deliverable cards, preview dialog viewer, and "Mở trên Google Drive ↗" fallback link.
 - Phase 5 passes unit tests, real PostgreSQL integration tests, desktop/mobile Chromium E2E, and zero schema migrations or drift.
+
+## 2026-09-19 - Phase 6 Calendar & Mobile Task Experience (V1.1)
+
+- Calendar query engine and API implemented (`/api/calendar` with strict ISO `YYYY-MM-DD` bounds, maximum 62-day range limit, `no-store` caching).
+- Strict calendar business semantics implemented: `assignedDate` = ASSIGNED/START marker ("Giao"), `dueDate` = DEADLINE marker ("Hạn"), same-day assigned==due deduplicated ("Giao & Hạn"), zero synthetic intermediate date markers.
+- Role-scoped query authorization: HEAD and DEPUTY read all team tasks; EMPLOYEE reads only own assigned tasks; soft-deleted tasks are strictly excluded.
+- Desktop Month view (Monday-first grid, 7 columns, leading/trailing month padding, business today highlight, selected date highlight, bounded task chips with overflow "+N công việc" popover).
+- Desktop Week view (Monday–Sunday 7 columns, all-day markers, no hourly grid).
+- Selected-date agenda panel with grouped/deduplicated task cards and direct navigation to `/tasks/[id]`.
+- Mobile agenda-first presentation (~390px, compact 7-day horizontal week date strip, responsive touch targets >= 44px, zero horizontal overflow).
+- Mobile persistent bottom navigation (`Hôm nay`, `Công việc`, `Lịch`) integrated into protected shell with safe-area insets, route matching, and light/dark theme support.
+- Operational Employee Today experience on `/app`: assigned today, due today, own OPEN overdue tasks deduplicated, status/priority badges, today's derived Daily Progress status (`COMPLETED`, `NOT_COMPLETED`, `NOT_REPORTED`).
+- Date-only arithmetic without timezone shifts, business date derived from `Asia/Ho_Chi_Minh`. Zero Google Drive calls from Calendar code.
+- Zero database migrations or schema drift (`drizzle/0000_initial_v1_1.sql` unchanged). Full unit, PostgreSQL integration, and desktop/mobile Chromium E2E test coverage.
