@@ -6,6 +6,8 @@ import { getTasks } from "@/lib/tasks/server";
 import { TaskActions } from "@/components/tasks/task-actions";
 import { ProgressSection } from "@/components/progress/progress-section";
 import { getProgress } from "@/lib/progress/server";
+import { AssetSection } from "@/components/assets/asset-section";
+import { getAssets } from "@/lib/assets/server";
 
 export default async function TaskPage({
   params,
@@ -15,6 +17,10 @@ export default async function TaskPage({
   const actor = await requireSession();
   const task = await readTaskPage((await params).id);
   const progress = await getProgress().getTaskProgress(
+    new Headers(await headers()),
+    task.id,
+  );
+  const assets = await getAssets().getTaskAssets(
     new Headers(await headers()),
     task.id,
   );
@@ -59,6 +65,7 @@ export default async function TaskPage({
           </p>
         )}
       </article>
+      <AssetSection taskId={task.id} view={assets} />
       <ProgressSection taskId={task.id} view={progress} />
       {actor.role === "HEAD" && <TaskActions task={task} options={options} />}
     </>

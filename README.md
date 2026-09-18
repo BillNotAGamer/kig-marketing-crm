@@ -1,6 +1,6 @@
 # KIG Marketing CRM
 
-Internal Marketing task-management CRM for KIG Holding. The repository includes persistence, authentication, server-side RBAC, HEAD-only user administration, Task Core/lifecycle and Phase 4 Daily Progress. Google Drive Task Assets and subsequent features are deferred.
+Internal Marketing task-management CRM for KIG Holding. The repository includes persistence, authentication, server-side RBAC, HEAD-only user administration, Task Core/lifecycle, Phase 4 Daily Progress, and Phase 5 Google Drive Task Assets. Subsequent features (Calendar, Dashboard) remain deferred.
 
 Use Node.js **24 LTS** (`>=24 <25`); `.nvmrc` and `.node-version` pin 24.19.0. npm 11.17.0 is the recorded installation tool; npm 10 and 11 are permitted. On Windows PowerShell, use `npm.cmd` if execution policy blocks `npm.ps1`.
 
@@ -8,7 +8,7 @@ Use Node.js **24 LTS** (`>=24 <25`); `.nvmrc` and `.node-version` pin 24.19.0. n
 npm ci
 ```
 
-Copy `.env.example` to `.env.local` and provide private development values when later phases require them. Keep secrets out of Git. Offline checks and the placeholder require no database credentials. Phase 1 server DB/auth access validates all three required variables; BETTER_AUTH_SECRET must contain at least 32 characters. Google Drive credentials are deferred until its integration phase.
+Copy `.env.example` to `.env.local` and provide private development values when later phases require them. Keep secrets out of Git. Offline checks and the placeholder require no database credentials. Phase 1 server DB/auth access validates all three required variables; BETTER_AUTH_SECRET must contain at least 32 characters. Google Drive service account credentials may be supplied in `.env.local` for live Drive API metadata access.
 
 ```sh
 npm run dev
@@ -16,7 +16,7 @@ npm run dev
 
 Open http://localhost:3000/login. Login uses the private configured development database; authenticated users enter `/app`. HEAD users can administer accounts at `/users` and change their own password at `/account/password`. The root placeholder remains available. Quicksand and light/dark/system themes apply throughout.
 
-Task work is at `/tasks`, with protected detail/create and HEAD-only editing/reassignment/cancellation/soft deletion. HEAD/DEPUTY see team work; EMPLOYEE sees current assigned work only. Assignment eligibility and lifecycle are enforced by the transactional server service. Task Detail includes Phase 4 Daily Progress: current-assignee reporting once per business date, immutable history and audited latest-report HEAD correction. Completion occurs through reporting; correction is the sole reopening path. Google Drive Task Assets and later phases remain deferred.
+Task work is at `/tasks`, with protected detail/create and HEAD-only editing/reassignment/cancellation/soft deletion. HEAD/DEPUTY see team work; EMPLOYEE sees current assigned work only. Assignment eligibility and lifecycle are enforced by the transactional server service. Task Detail includes Phase 4 Daily Progress (reporting once per business date, immutable history, latest-report HEAD correction) and Phase 5 Google Drive Task Assets (URL allowlisting, service account metadata lookup, atomic `ADD_TASK_ASSET`/`REMOVE_TASK_ASSET` audits, active duplicate rejection, inline preview with fallback). Subsequent phases remain deferred.
 
 Validate the foundation:
 

@@ -24,6 +24,9 @@ export const serverEnvSchema = z.object({
         return false;
       }
     }),
+  GOOGLE_DRIVE_SERVICE_ACCOUNT_EMAIL: z.string().email().optional(),
+  GOOGLE_DRIVE_SERVICE_ACCOUNT_PRIVATE_KEY: z.string().min(1).optional(),
+  GOOGLE_DRIVE_SHARED_DRIVE_ID: z.string().min(1).optional(),
 });
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
 

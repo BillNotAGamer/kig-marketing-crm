@@ -49,3 +49,13 @@ Ordinary progress remains immutable; HEAD-only audited administrative correction
 - Server business-date calculation, Task/date uniqueness and same-day reassignment consequence preserved. Only Daily Progress performs normal completion.
 - Dedicated HEAD latest-report/status-changing correction, paired metadata, audited reopening/completion and cancellation protection implemented; bilingual business/technical safeguards synchronized without version bump.
 - Existing advisory/row locking coordinates progress with Task/account administration; tests cover competing report/cancel/reassign and real audit/task failure rollback. Mobile shadcn reporting/correction dialogs and protected detail history added. No schema change or Phase 5 functionality.
+
+## 2026-09-19 - Phase 5 Google Drive Task Assets (V1.1)
+
+- Google Drive Task Asset / Deliverables integration implemented with server-side service-account authentication (`google-auth-library@11.1.0`), minimal read-only metadata scope (`drive.metadata.readonly`), and Shared Drive support.
+- Strict Google Drive and Google Docs host allowlisting, folder rejection, deterministic MIME classification (`IMAGE`, `VIDEO`, `DOCUMENT`, `SPREADSHEET`, `PRESENTATION`, `PDF`, `OTHER`), and canonical URL parsing implemented.
+- Atomic transactional asset addition (`ADD_TASK_ASSET`) and soft removal (`REMOVE_TASK_ASSET`) implemented under existing advisory lock 24091802; external Drive reads occur outside DB transactions. Active duplicate attachments on same task rejected with 409 Conflict via database partial unique index.
+- Strict authorization: HEAD may attach to any non-deleted task; DEPUTY/EMPLOYEE may attach only to own assigned OPEN task. HEAD may remove any active asset; DEPUTY/EMPLOYEE may remove only own created asset on own assigned OPEN task.
+- Zero Drive mutations: CRM never calls Drive create, update, rename, delete, or permission APIs. Removing an asset in CRM leaves the Google Drive file untouched.
+- Sandboxed inline previews via CSP `frame-src 'self' https://drive.google.com https://docs.google.com;`, mobile-first deliverable cards, preview dialog viewer, and "Mở trên Google Drive ↗" fallback link.
+- Phase 5 passes unit tests, real PostgreSQL integration tests, desktop/mobile Chromium E2E, and zero schema migrations or drift.
