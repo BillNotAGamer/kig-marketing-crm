@@ -32,3 +32,13 @@ Ordinary progress remains immutable; HEAD-only audited administrative correction
 - Explicit 12–128 character password policy, current-password validation for HEAD own changes, session revocation and controlled private-input initial HEAD bootstrap added.
 - English/Vietnamese technical documentation updated together; approved business baseline V1.1 and the applied Phase 1 initial migration preserved.
 - Closure passed 36 offline tests, three real PostgreSQL suites/tests including competing final-HEAD mutations, and eight desktop/mobile Chromium E2E tests. Live catalogs verified, auth artifacts remained deterministic, Drizzle reported no changes, and fixture cleanup left all nine tables empty.
+
+## 2026-09-18 - Phase 3 Task Core and Lifecycle (V1.1)
+
+- Explicit Task service, canonical session-derived actors, role-scoped joins and resource assignment/read policies implemented.
+- Personal/authorized assigned creation, immutable creator, HEAD-only OPEN metadata/reassignment/cancellation and status-independent soft deletion implemented. No completion command; Daily Progress remains Phase 4.
+- Task mutation/audit/required notification transactions, shared account-state/advisory coordination and row locking prevent partial writes and stale lifecycle mutations.
+- Mobile-first list/detail/create/edit and confirmed HEAD actions added with Quicksand and light/dark/system themes; no Calendar/Dashboard/Drive/notification-center UI.
+- English/Vietnamese technical documentation synchronized; business baseline V1.1 and the applied initial migration preserved. PostgreSQL tests include direct HTTP denial, ownership/access transfer, dependent-history retention, injected audit/notice failures and competing cancel/reassign/delete/edit.
+
+- Phase 3 closure passed 92 offline/security tests, 12 real PostgreSQL tests and 12 desktop/mobile Chromium tests; authenticated light/dark/mobile visual verification passed. Live catalogs verified, auth artifacts stayed deterministic and Drizzle reported no changes. Cleanup left all nine tables empty, one existing migration journal entry and no test triggers. No Phase 4 implementation.

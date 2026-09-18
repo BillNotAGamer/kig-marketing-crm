@@ -32,6 +32,12 @@ export default async function ProtectedLayout({
             >
               Home
             </Link>
+            <Link
+              className="py-2 underline-offset-4 hover:underline"
+              href="/tasks"
+            >
+              Tasks
+            </Link>
             {actor.role === "HEAD" && (
               <>
                 <Link

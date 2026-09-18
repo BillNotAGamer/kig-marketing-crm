@@ -1,4 +1,6 @@
 import { requireSession } from "@/lib/auth/session";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default async function ApplicationHome() {
   const actor = await requireSession();
@@ -7,9 +9,11 @@ export default async function ApplicationHome() {
       <p className="text-sm text-muted-foreground">Internal workspace</p>
       <h1 className="mt-2 text-3xl font-semibold">Welcome, {actor.name}</h1>
       <p className="mt-4 text-muted-foreground">
-        Your account is ready. Marketing work tools will be introduced in later
-        phases.
+        Open your tasks to plan and manage current work.
       </p>
+      <Button asChild className="mt-5 min-h-11">
+        <Link href="/tasks">Open tasks</Link>
+      </Button>
     </section>
   );
 }
