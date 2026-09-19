@@ -34,6 +34,8 @@ export function DashboardView({ data }: DashboardViewProps) {
     URGENT: "Khẩn cấp",
   };
 
+  const hasOverdue = overdueTasks.length > 0;
+
   return (
     <div className="space-y-8">
       {/* Top summary cards */}
@@ -121,12 +123,18 @@ export function DashboardView({ data }: DashboardViewProps) {
               <span className="text-xs font-medium uppercase tracking-wider">
                 Quá hạn
               </span>
-              <AlertCircle className="h-4 w-4 text-destructive" />
+              <AlertCircle
+                className={`h-4 w-4 ${summary.overdueCount > 0 ? "text-destructive" : "text-muted-foreground"}`}
+              />
             </div>
-            <div className="mt-2 text-2xl font-bold text-destructive">
+            <div
+              className={`mt-2 text-2xl font-bold ${summary.overdueCount > 0 ? "text-destructive" : "text-foreground"}`}
+            >
               {summary.overdueCount}
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">Cần xử lý ngay</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {summary.overdueCount > 0 ? "Cần xử lý ngay" : "Đúng tiến độ"}
+            </p>
           </Card>
         </div>
       </section>
@@ -187,7 +195,7 @@ export function DashboardView({ data }: DashboardViewProps) {
                           )}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {emp.role} · {emp.email}
+                          {emp.role}
                         </div>
                       </td>
                       <td className="px-3 py-3 text-center font-semibold">
@@ -224,15 +232,25 @@ export function DashboardView({ data }: DashboardViewProps) {
         <div className="flex items-center justify-between">
           <h2
             id="overdue-heading"
-            className="flex items-center gap-2 text-lg font-semibold text-destructive"
+            className={
+              hasOverdue
+                ? "flex items-center gap-2 text-lg font-semibold text-destructive"
+                : "flex items-center gap-2 text-lg font-semibold text-foreground"
+            }
           >
-            <AlertCircle className="h-5 w-5" />
+            <AlertCircle
+              className={
+                hasOverdue
+                  ? "h-5 w-5 text-destructive"
+                  : "h-5 w-5 text-muted-foreground"
+              }
+            />
             Công việc đang quá hạn ({overdueTasks.length})
           </h2>
         </div>
 
-        {overdueTasks.length === 0 ? (
-          <Card className="p-6 text-center text-muted-foreground">
+        {!hasOverdue ? (
+          <Card className="border-dashed p-6 text-center text-muted-foreground">
             Tuyệt vời! Không có công việc nào đang quá hạn.
           </Card>
         ) : (
