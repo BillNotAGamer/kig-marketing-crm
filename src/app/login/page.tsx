@@ -21,9 +21,9 @@ export default async function LoginPage() {
         </div>
         <Card>
           <CardHeader>
-            <CardTitle>Welcome back</CardTitle>
+            <CardTitle>Chào mừng quay trở lại</CardTitle>
             <CardDescription>
-              Sign in to your internal workspace.
+              Đăng nhập vào không gian làm việc nội bộ của bạn.
             </CardDescription>
           </CardHeader>
           <CardContent>

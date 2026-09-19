@@ -19,7 +19,7 @@ export function LoginForm() {
       password: data.get("password"),
     });
     if (!parsed.success) {
-      setError("Enter a valid email and password.");
+      setError("Nhập email và mật khẩu hợp lệ.");
       return;
     }
     setLoading(true);
@@ -31,7 +31,7 @@ export function LoginForm() {
         body: JSON.stringify(parsed.data),
       });
       if (!response.ok) {
-        setError("Sign-in failed. Check your credentials or contact HEAD.");
+        setError("Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin hoặc liên hệ với Admin.");
         form.querySelector<HTMLInputElement>('input[name="password"]')!.value =
           "";
         return;
@@ -40,7 +40,7 @@ export function LoginForm() {
       router.replace("/dashboard");
       router.refresh();
     } catch {
-      setError("Unable to sign in. Please try again.");
+      setError("Không thể đăng nhập. Vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
@@ -60,7 +60,7 @@ export function LoginForm() {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
+        <Label htmlFor="password">Mật khẩu</Label>
         <Input
           id="password"
           name="password"
@@ -77,10 +77,10 @@ export function LoginForm() {
         </p>
       )}
       <Button className="min-h-11 w-full" disabled={loading}>
-        {loading ? "Signing in…" : "Sign in"}
+        {loading ? "Đang đăng nhập…" : "Đăng nhập"}
       </Button>
       <p className="text-sm text-muted-foreground">
-        Accounts and password assistance are managed by HEAD.
+        Tài khoản và mật khẩu được quản lý bởi Admin.
       </p>
     </form>
   );
