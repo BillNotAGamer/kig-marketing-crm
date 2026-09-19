@@ -232,53 +232,58 @@ export function AssetSection({
             if (!open) setPreviewAsset(null);
           }}
         >
-          <DialogContent className="max-h-[95dvh] max-w-4xl overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="truncate">
+          <DialogContent className="flex flex-col w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] sm:w-[94vw] sm:max-w-[1200px] max-h-[92vh] p-4 sm:p-6 gap-3 sm:gap-4 overflow-hidden">
+            <DialogHeader className="shrink-0 space-y-1">
+              <DialogTitle className="truncate pr-8 text-base sm:text-lg font-semibold">
                 {previewAsset?.fileName ?? "Bản xem trước"}
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-xs sm:text-sm text-muted-foreground truncate">
                 Bản xem trước trực tiếp từ Google Drive.
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 pt-2">
-              <div className="relative aspect-video w-full overflow-hidden rounded-md border bg-muted">
-                {previewAsset && (
-                  <iframe
-                    src={previewAsset.previewUrl}
-                    title={previewAsset.fileName ?? "Google Drive Preview"}
-                    className="h-full w-full border-0"
-                    allow="autoplay"
-                    loading="lazy"
-                  />
-                )}
-              </div>
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-xs text-muted-foreground">
-                <p>
-                  Nếu bản xem trước không tải được, bạn có thể cần quyền truy
-                  cập Google Drive.
-                </p>
-                {previewAsset && (
-                  <a
-                    href={previewAsset.openUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center font-medium text-foreground underline hover:text-primary"
-                  >
-                    Mở trên Google Drive ↗
-                  </a>
-                )}
-              </div>
+            <div className="relative flex-1 min-h-0 w-full h-[65vh] sm:h-[70vh] max-h-[72vh] overflow-hidden overflow-x-hidden rounded-lg border bg-muted/40 flex items-center justify-center">
+              {previewAsset && (
+                <iframe
+                  src={previewAsset.previewUrl}
+                  title={previewAsset.fileName ?? "Google Drive Preview"}
+                  className="h-full w-full border-0 block"
+                  allow="autoplay"
+                  loading="lazy"
+                />
+              )}
             </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setPreviewAsset(null)}
-              >
-                Đóng
-              </Button>
+            <DialogFooter className="shrink-0 -mx-4 -mb-4 sm:-mx-6 sm:-mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t bg-muted/50 p-3 sm:p-4 mt-1">
+              <p className="text-xs text-muted-foreground text-left">
+                Nếu bản xem trước không tải được, bạn có thể cần quyền truy cập
+                Google Drive.
+              </p>
+              <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                {previewAsset && (
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="sm"
+                    className="min-h-9 text-xs font-medium"
+                  >
+                    <a
+                      href={previewAsset.openUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Mở trên Google Drive ↗
+                    </a>
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="min-h-9 text-xs font-medium"
+                  onClick={() => setPreviewAsset(null)}
+                >
+                  Đóng
+                </Button>
+              </div>
             </DialogFooter>
           </DialogContent>
         </Dialog>
