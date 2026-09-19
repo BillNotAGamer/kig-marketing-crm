@@ -1,8 +1,11 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { requireSession } from "@/lib/auth/session";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { ThemeControls } from "@/components/theme-controls";
 import { MobileBottomNav } from "@/components/navigation/mobile-nav";
+import { getNotifications } from "@/lib/notifications/server";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 
 export default async function ProtectedLayout({
   children,
@@ -10,6 +13,14 @@ export default async function ProtectedLayout({
   children: React.ReactNode;
 }) {
   const actor = await requireSession();
+  const headerList = new Headers(await headers());
+  let unreadCount = 0;
+  try {
+    unreadCount = await getNotifications().getUnreadCount(headerList);
+  } catch {
+    unreadCount = 0;
+  }
+
   return (
     <div className="min-h-svh">
       <header className="border-b bg-card">
@@ -18,6 +29,7 @@ export default async function ProtectedLayout({
             KIG Marketing CRM
           </Link>
           <div className="flex flex-wrap items-center gap-3">
+            <NotificationBell unreadCount={unreadCount} />
             <span className="text-sm">
               {actor.name} · {actor.role}
             </span>
@@ -35,6 +47,12 @@ export default async function ProtectedLayout({
             </Link>
             <Link
               className="py-2 underline-offset-4 hover:underline"
+              href="/dashboard"
+            >
+              Dashboard
+            </Link>
+            <Link
+              className="py-2 underline-offset-4 hover:underline"
               href="/tasks"
             >
               Tasks
@@ -45,8 +63,26 @@ export default async function ProtectedLayout({
             >
               Calendar
             </Link>
+            <Link
+              className="py-2 underline-offset-4 hover:underline"
+              href="/reports"
+            >
+              Reports
+            </Link>
+            <Link
+              className="py-2 underline-offset-4 hover:underline"
+              href="/search"
+            >
+              Search
+            </Link>
             {actor.role === "HEAD" && (
               <>
+                <Link
+                  className="py-2 underline-offset-4 hover:underline"
+                  href="/audit"
+                >
+                  Audit Log
+                </Link>
                 <Link
                   className="py-2 underline-offset-4 hover:underline"
                   href="/users"
@@ -70,7 +106,7 @@ export default async function ProtectedLayout({
       <footer className="mx-auto max-w-6xl px-4 pb-20 sm:px-8 sm:pb-8">
         <ThemeControls />
       </footer>
-      <MobileBottomNav />
+      <MobileBottomNav role={actor.role} />
     </div>
   );
 }

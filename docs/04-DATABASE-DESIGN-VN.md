@@ -292,3 +292,39 @@ Ngữ nghĩa hiển thị trên Lịch được suy ra trực tiếp từ các c
 - Mọi công việc chưa xóa ở tất cả trạng thái vòng đời (`OPEN`, `COMPLETED`, `CANCELLED`) đều được hiển thị với cách trình bày trực quan phù hợp.
 
 Các truy vấn ngày được giới hạn nghiêm ngặt tối đa 62 ngày thông qua dịch vụ `listCalendarTasks()`. Truy vấn lọc ngày ngay tại cấp PostgreSQL: `(assigned_date BETWEEN from AND to) OR (due_date BETWEEN from AND to)` sử dụng các index hiện có. Khi khoảng ngày truy vấn bao gồm ngày nghiệp vụ hôm nay (`Asia/Ho_Chi_Minh`), trạng thái tiến độ hàng ngày chính thức được batch join qua `task_daily_update` mà không phát sinh truy vấn N+1. Hoàn toàn không gọi API Google Drive từ các dịch vụ Lịch.
+
+## Lưu trữ Tổng quan, Báo cáo, Tìm kiếm, Thông báo & Kiểm toán Phase 7 - 2026-09-19 (giữ nguyên V1.1)
+
+Phase 7 triển khai các chức năng Tổng quan (Dashboard), Báo cáo lịch sử, Tìm kiếm công việc, Trung tâm thông báo và Nhật ký kiểm toán trên nền tảng dữ liệu hiện có. Không yêu cầu bất kỳ migration schema cơ sở dữ liệu nào, không tạo thêm bảng mới, không thêm index mới và không thay đổi enum. Bản migration ban đầu `drizzle/0000_initial_v1_1.sql` giữ nguyên 100%, bảo toàn baseline nghiêm ngặt gồm 9 bảng và 6 enum.
+
+### 1. Tổng quan vận hành hôm nay (Dashboard)
+
+- Tập công việc vận hành hôm nay được máy chủ tính toán cho múi giờ `Asia/Ho_Chi_Minh`: gồm các công việc duy nhất chưa bị xóa có `assigned_date <= businessToday` VÀ (`status = 'OPEN'` HOẶC có bản ghi `task_daily_update` chính thức trong ngày `businessToday`).
+- Các công việc hoàn thành trước hôm nay mà không có báo cáo hôm nay sẽ không làm sai lệch chỉ số vận hành hôm nay.
+- Quy tắc quy gán khi chuyển giao trong ngày: nếu công việc đã có báo cáo hôm nay, chỉ số HOÀN THÀNH / CHƯA XONG được quy gán cho người báo cáo thực tế (`report.userId`); nếu chưa có báo cáo, chỉ số CHƯA BÁO CÁO được quy gán cho người được giao hiện tại (`task.assignedToId`). Người nhận việc mới không bị tính oan lỗi chưa báo cáo nếu công việc đã được nộp báo cáo trước đó trong ngày.
+- Số lượng quá hạn được tính động theo thời gian thực (`status = 'OPEN' AND due_date IS NOT NULL AND due_date < businessToday`). Tuyệt đối không lưu vết trạng thái OVERDUE vào cơ sở dữ liệu.
+
+### 2. Báo cáo lịch sử dựa trên bằng chứng
+
+- Chỉ thống kê các sự kiện thực tế đã được lưu trữ trong khoảng ngày ISO hợp lệ (tối đa 366 ngày, mặc định 30 ngày kết thúc vào `businessToday`).
+- Các chỉ số gồm: số báo cáo đã nộp, số báo cáo hoàn thành, số báo cáo chưa xong, tỷ lệ hoàn thành trong số báo cáo đã nộp (`completed / submitted * 100`), số việc hoàn thành trong kỳ, số việc giao trong kỳ, và số việc đang quá hạn hiện tại.
+- Tuyệt đối không tự bịa đặt hay dựng lại chỉ số CHƯA BÁO CÁO trong quá khứ vì lịch sử thay đổi phân công không được lưu snapshot từng ngày.
+- Bảng chi tiết theo nhân sự nhóm theo người báo cáo thực tế (`task_daily_update.userId`), đảm bảo các nhân sự đã vô hiệu hóa vẫn hiển thị trung thực nếu có dữ liệu lịch sử.
+
+### 3. Tìm kiếm công việc
+
+- Tìm kiếm chuỗi con trên `task.title` và `task.description` (kèm tên người được giao đối với vai trò quản lý nhóm) sử dụng truy vấn Drizzle có tham số hóa.
+- Tự động escape các ký tự đại diện SQL `%` và `_` để đảm bảo tìm kiếm chính xác theo chuỗi ký tự thường.
+- Phân trang giới hạn (mặc định 20, tối đa 50 việc/trang) với thứ tự sắp xếp xác định (`updated_at DESC, id DESC`).
+
+### 4. Trung tâm thông báo & Trạng thái đọc
+
+- Tận dụng bảng `notification` có sẵn với trường `read_at: timestamp with time zone NULL` và index phức hợp `notification_user_read_created_idx (user_id, read_at, created_at)`.
+- Cách ly người nhận tuyệt đối: truy vấn bắt buộc `user_id = actor.id`. Thao tác đánh dấu đã đọc một thông báo hoặc tất cả thông báo thực hiện nguyên tử qua `.returning({ id: notification.id })`.
+- Bảo toàn thông báo lịch sử an toàn mà không làm lộ thông tin mới của công việc khi người nhận đã bị chuyển giao việc và không còn quyền đọc công việc đó.
+
+### 5. Nhật ký kiểm toán (Audit Log Viewer)
+
+- Truy vấn chỉ đọc trên bảng `audit_log` dành riêng cho HEAD.
+- DTO an toàn loại bỏ toàn bộ mật khẩu, mã băm, token phiên, khóa bí mật Google và thông tin xác thực. Phân trang giới hạn (mặc định 25, tối đa 50 bản ghi).
+- Tuyệt đối không thực hiện bất kỳ lệnh gọi API Google Drive nào từ các dịch vụ Dashboard, Báo cáo, Tìm kiếm, Thông báo hay Kiểm toán.

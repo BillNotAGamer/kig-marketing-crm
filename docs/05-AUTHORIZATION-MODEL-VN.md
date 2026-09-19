@@ -194,3 +194,38 @@ Phase 6 triển khai phân quyền truy vấn Lịch và Công việc Mobile d�
 - Mọi thao tác cập nhật công việc tiếp tục thực hiện qua các endpoint lệnh Phase 3/4/5 có thẩm quyền với đầy đủ xác thực, khóa và ghi audit.
 - GET `/api/calendar` thực thi kiểm tra session server chuẩn và từ chối tài khoản bị cấm/vô hiệu hóa với lỗi 401 Unauthorized. Schema Zod nghiêm ngặt từ chối ngày ISO sai định dạng, khoảng ngày đảo ngược (`from > to`), và khoảng thời gian vượt quá 62 ngày với lỗi 400 Bad Request có kiểm soát. Header phản hồi sử dụng `Cache-Control: no-store`.
 - Thanh điều hướng đáy Mobile (Bottom Navigation) tuân thủ ranh giới vai trò và bố cục shell được bảo vệ sẵn có mà không gán cứng các điểm đến không có quyền truy cập.
+
+## Phân quyền Tổng quan, Báo cáo, Tìm kiếm, Thông báo & Kiểm toán Phase 7 - 2026-09-19 (V1.1)
+
+Phase 7 thực thi các biện pháp kiểm soát phân quyền truy cập và thay đổi dữ liệu có thẩm quyền tại máy chủ trên toàn bộ các giao diện nghiệp vụ mới:
+
+### 1. Phân quyền Tổng quan (`/dashboard`, `GET /api/dashboard`)
+
+- HEAD và DEPUTY truy cập Tổng quan nhóm (`isTeamView = true`), xem các chỉ số tổng hợp và bảng chi tiết tiến độ theo từng nhân viên bao gồm mọi tài khoản đang hoạt động và nhân sự lịch sử liên quan.
+- EMPLOYEE bị giới hạn nghiêm ngặt ở Tổng quan cá nhân (`isTeamView = false`). Chỉ các công việc hiện đang hiển thị cho nhân viên (`task.assignedToId === actor.id`) mới tham gia vào số liệu tổng kết. Công việc của người khác, số liệu vận hành của người khác và bảng toàn nhóm bị giữ lại triệt để ở phía máy chủ.
+- Không nhận tham số ngày từ client: `businessToday` do máy chủ tính toán cho múi giờ `Asia/Ho_Chi_Minh`. Danh tính người thực hiện được xác thực server-side qua cookie phiên Better Auth chuẩn.
+
+### 2. Phân quyền Báo cáo lịch sử (`/reports`, `GET /api/reports`)
+
+- HEAD và DEPUTY truy cập Báo cáo nhóm (`isTeamView = true`) kèm bảng phân tích theo từng người báo cáo trong nhóm.
+- EMPLOYEE bị giới hạn ở Báo cáo cá nhân (`isTeamView = false`), chỉ phản ánh công việc/báo cáo đang được phép đọc. Nhân viên không thể khôi phục dữ liệu quá khứ của các công việc đã bị chuyển giao cho người khác hoặc đã bị xóa.
+- Khoảng ngày báo cáo bị giới hạn nghiêm ngặt tối đa 366 ngày với quy tắc `from <= to` bắt buộc tại máy chủ.
+
+### 3. Phân quyền Tìm kiếm công việc (`/search`, `GET /api/search/tasks`)
+
+- HEAD và DEPUTY tìm kiếm trên toàn bộ công việc của nhóm chưa bị xóa. Vai trò quản lý nhóm được hỗ trợ tìm kiếm theo tên người được giao việc.
+- EMPLOYEE chỉ tìm kiếm trên các công việc chưa bị xóa đang được giao cho chính mình (`assignedToId === actor.id`). Công việc của người khác không bao giờ xuất hiện trong kết quả, kể cả khi tìm kiếm chính xác từng từ tiêu đề hay mô tả. Số lượng kết quả tìm thấy không bao giờ làm lộ sự tồn tại của công việc ngoài quyền.
+- Chuỗi tìm kiếm được cắt khoảng trắng, giới hạn từ 2 đến 100 ký tự và xử lý dưới dạng chuỗi con ký tự thường với các ký tự đại diện `%` và `_` được escape an toàn. Phân trang có giới hạn (tối đa 50 việc/trang).
+
+### 4. Phân quyền Trung tâm thông báo (`/notifications`, `/api/notifications/*`)
+
+- Cách ly người nhận tuyệt đối: mỗi người dùng chỉ đọc và thao tác trên thông báo gửi đến chính mình (`user_id === actor.id`). HEAD và DEPUTY không thể xem hay đánh dấu thông báo của người khác.
+- Các lệnh thay đổi (`POST /api/notifications/[id]/read` và `POST /api/notifications/read-all`) xác thực nguồn gốc request (origin) và kiểm tra quyền sở hữu của người nhận. Cố tình đánh dấu thông báo của người khác sẽ trả về 0 bản ghi và kết quả `false`.
+- Thông báo không dùng để vượt quyền truy cập công việc: thông báo lịch sử hiển thị thông điệp an toàn đã lưu, nhưng khi bấm vào liên kết công việc vẫn phải trải qua kiểm tra phân quyền công việc thông thường (trả về 404 nếu không còn quyền đọc).
+
+### 5. Phân quyền Nhật ký kiểm toán (`/audit`, `GET /api/audit`)
+
+- Dành riêng cho HEAD: chỉ Quản trị viên chính thức mới có quyền xem và lọc nhật ký kiểm toán hệ thống.
+- DEPUTY và EMPLOYEE bị cấm tuyệt đối: truy cập `/audit` bị chuyển hướng về `/access-denied` qua `requireRole("HEAD")`, và gọi `GET /api/audit` bị trả về mã lỗi HTTP 403 Forbidden.
+- Nhật ký kiểm toán là dạng append-only (chỉ ghi thêm); tuyệt đối không có endpoint sửa đổi, xóa hoặc vá (patch) dữ liệu kiểm toán.
+- DTO an toàn loại bỏ toàn bộ mật khẩu, mã băm, token phiên và khóa bí mật.

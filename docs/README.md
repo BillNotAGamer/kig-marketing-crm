@@ -172,6 +172,18 @@ One official report belongs to the Task/date, not the assignee/date. Reassignmen
 
 Calendar is a read-oriented presentation and query layer over existing Task and Daily Progress data. It introduces zero database migrations, zero new tables, and zero schema changes. Calendar markers derive directly from `assignedDate` (ASSIGNED / START marker "Giao") and `dueDate` (DEADLINE marker "Hạn"). When `assignedDate === dueDate`, markers deduplicate into a single combined marker ("Giao & Hạn"). No synthetic duration markers are generated for days between assignment and deadline. All calendar calculations use zero-timezone-shift date arithmetic, Monday-first week layouts, and `Asia/Ho_Chi_Minh` for the current business date. Calendar visibility strictly inherits Task resource authorization: HEAD and DEPUTY read team tasks, EMPLOYEE reads own assigned tasks, and soft-deleted tasks are excluded. The mobile view provides an agenda-first layout (~390px) with a 7-day compact week strip, persistent bottom navigation, and an Employee Today operational hub without horizontal overflow. No Google Drive API calls are executed by Calendar services.
 
+### Dashboard, Reports, Search, Notifications & Audit implementation safeguards (Phase 7, V1.1)
+
+Phase 7 introduces operational dashboards, historical reporting, task search, notification center, and an audit log viewer strictly over existing baseline schema without migrations, new tables, or enum modifications:
+
+- Operational Today Dashboard derives metrics dynamically in `Asia/Ho_Chi_Minh` for unique non-deleted tasks assigned on or before today that are either OPEN or reported today via `task_daily_update`. Same-day reassignment credits submitted reports to `report.userId` and unreported tasks to current `task.assignedToId` without false non-reporting counts for reassigned users.
+- Overdue tasks are computed dynamically from `status === 'OPEN' && dueDate !== null && dueDate < businessToday`. OVERDUE is never persisted as a status.
+- Historical Operational Reports reflect strictly persisted evidence over bounded date ranges (up to 366 days). Arbitrary historical `NOT_REPORTED` metrics are never fabricated. Per-reporter breakdown groups by actual `task_daily_update.userId`.
+- Task Search supports literal substring queries with `%` and `_` escaped, bounded pagination (max 50), and strict role scoping (EMPLOYEE never discovers foreign tasks).
+- Notification Center isolates notifications strictly to the recipient (`user_id === actor.id`), supports atomic mark single/all as read via the existing `notification.read_at` column, and never uses historical notifications to leak fresh task permissions.
+- Audit Log Viewer is restricted strictly to HEAD (DEPUTY/EMPLOYEE receive 403), read-only, append-only, and strips all credential/secret material.
+- Zero Google Drive calls are made from Dashboard, Reports, Search, Notifications, or Audit services.
+
 See [database design](04-DATABASE-DESIGN.md), [authorization](05-AUTHORIZATION-MODEL.md), and [changelog](CHANGELOG.md).
 
 ---

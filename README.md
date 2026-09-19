@@ -1,6 +1,6 @@
 # KIG Marketing CRM
 
-Internal Marketing task-management CRM for KIG Holding. The repository includes persistence, authentication, server-side RBAC, HEAD-only user administration, Task Core/lifecycle, Phase 4 Daily Progress, Phase 5 Google Drive Task Assets, and Phase 6 Calendar & Mobile Task Experience. Subsequent features (Management Dashboard, Advanced Analytics) remain deferred.
+Internal Marketing task-management CRM for KIG Holding. The repository includes persistence, authentication, server-side RBAC, HEAD-only user administration, Task Core/lifecycle, Phase 4 Daily Progress, Phase 5 Google Drive Task Assets, Phase 6 Calendar & Mobile Task Experience, and Phase 7 Dashboard, Reports, Search, Notifications & Audit Viewer.
 
 Use Node.js **24 LTS** (`>=24 <25`); `.nvmrc` and `.node-version` pin 24.19.0. npm 11.17.0 is the recorded installation tool; npm 10 and 11 are permitted. On Windows PowerShell, use `npm.cmd` if execution policy blocks `npm.ps1`.
 
@@ -14,7 +14,7 @@ Copy `.env.example` to `.env.local` and provide private development values when 
 npm run dev
 ```
 
-Open http://localhost:3000/login. Login uses the private configured development database; authenticated users enter `/app`. HEAD users can administer accounts at `/users` and change their own password at `/account/password`. The root placeholder remains available. Quicksand and light/dark/system themes apply throughout.
+Open http://localhost:3000/login. Login uses the private configured development database; authenticated users enter `/app`. HEAD users can administer accounts at `/users`, view system audit logs at `/audit`, and change their own password at `/account/password`. The root placeholder remains available. Quicksand and light/dark/system themes apply throughout.
 
 Task work is at `/tasks`, with protected detail/create and HEAD-only editing/reassignment/cancellation/soft deletion. HEAD/DEPUTY see team work; EMPLOYEE sees current assigned work only. Assignment eligibility and lifecycle are enforced by the transactional server service. Task Detail includes Phase 4 Daily Progress (reporting once per business date, immutable history, latest-report HEAD correction) and Phase 5 Google Drive Task Assets (URL allowlisting, service account metadata lookup, atomic `ADD_TASK_ASSET`/`REMOVE_TASK_ASSET` audits, active duplicate rejection, inline preview with fallback).
 
@@ -23,9 +23,17 @@ Calendar and mobile task experience is at `/calendar` and `/app`:
 - Desktop Month and Week views (Monday-first, 7 columns, bounded task chips with overflow popover, all-day markers, business today highlight).
 - Strict marker semantics: `assignedDate` = ASSIGNED/START ("Giao"), `dueDate` = DEADLINE ("Hạn"), same-day assigned==due deduplicated ("Giao & Hạn"), zero synthetic duration markers.
 - Mobile agenda-first view (~390px, compact horizontal 7-day date strip, touch-friendly, zero horizontal overflow).
-- Mobile persistent bottom navigation (`Hôm nay`, `Công việc`, `Lịch`) integrated with safe-area insets.
+- Mobile persistent bottom navigation (`Hôm nay`, `Tổng quan`, `Công việc`, `Lịch`, plus responsive `Thêm` menu for `Báo cáo`, `Tìm kiếm`, `Thông báo`, and `Kiểm toán`).
 - Employee "Today" experience on `/app`: assigned today, due today, own OPEN overdue tasks deduplicated, status/priority badges, and derived Daily Progress state.
 - Calendar is strictly read-oriented with zero mutations; clicking a task navigates directly to `/tasks/[id]`. Zero Google Drive calls from Calendar code.
+
+Phase 7 operational and management surfaces:
+
+- **Dashboard** (`/dashboard`): Team Dashboard for HEAD and DEPUTY (team metrics, per-employee breakdown, overdue tasks list); Personal Dashboard for EMPLOYEE (own visible tasks only without foreign data leaks).
+- **Historical Reports** (`/reports`): Persisted-evidence reporting over bounded date ranges (up to 366 days), completion ratio among submitted reports, per-reporter breakdown. No fabricated historical `NOT_REPORTED`.
+- **Task Search** (`/search`): Literal substring search escaping `%` and `_`, role-scoped with status/priority/assignee filters and bounded pagination.
+- **Notification Center** (`/notifications`): Header bell with unread badge, recipient isolation, and atomic mark read / mark all read.
+- **Audit Log Viewer** (`/audit`): HEAD-only access, action and entity filtering, paginated audit trail with credentials and secrets stripped. Zero Google Drive calls from Dashboard, Reports, Search, Notifications, or Audit.
 
 Validate the foundation:
 

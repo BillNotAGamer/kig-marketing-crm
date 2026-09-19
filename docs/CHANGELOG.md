@@ -73,3 +73,16 @@ Ordinary progress remains immutable; HEAD-only audited administrative correction
 - Operational Employee Today experience on `/app`: assigned today, due today, own OPEN overdue tasks deduplicated, status/priority badges, today's derived Daily Progress status (`COMPLETED`, `NOT_COMPLETED`, `NOT_REPORTED`).
 - Date-only arithmetic without timezone shifts, business date derived from `Asia/Ho_Chi_Minh`. Zero Google Drive calls from Calendar code.
 - Zero database migrations or schema drift (`drizzle/0000_initial_v1_1.sql` unchanged). Full unit, PostgreSQL integration, and desktop/mobile Chromium E2E test coverage.
+
+## 2026-09-19 - Phase 7 Dashboard, Reports, Search, Notifications & Audit Viewer (V1.1)
+
+- Role-aware Dashboard implemented (`/dashboard`, `GET /api/dashboard`): Team Dashboard for HEAD and DEPUTY with team metrics and per-employee operational breakdown; Personal Dashboard for EMPLOYEE restricted to own visible tasks without foreign data leaks.
+- Today's operational task snapshot semantics: server-derived for `Asia/Ho_Chi_Minh`, includes tasks where `assignedDate <= businessToday` AND (`status === 'OPEN'` OR has an official `task_daily_update` on `businessToday`).
+- Same-day reassignment attribution: submitted report is attributed to actual reporter `report.userId`; unreported task is attributed to current `task.assignedToId`; reassigned assignee receives no duplicate or false `NOT_REPORTED`.
+- Current overdue metric derived dynamically (`status === 'OPEN' && dueDate !== null && dueDate < businessToday`). Never persisted.
+- Historical Operational Reports implemented (`/reports`, `GET /api/reports`): strictly based on persisted facts over bounded date ranges (max 366 days, default 30 days ending `businessToday`). Zero fabricated historical `NOT_REPORTED` metrics. Per-reporter breakdown grouped by `task_daily_update.userId` preserving representation of historical/inactive users.
+- Task Search implemented (`/search`, `GET /api/search/tasks`): literal substring search escaping `%` and `_`, role-scoped (EMPLOYEE restricted to own assigned tasks), status/priority/assignee filters, and bounded pagination (default 20, max 50).
+- Notification Center implemented (`/notifications`, `/api/notifications/*`): user-isolated to canonical session recipient, unread badge indicator in header, atomic mark single/all as read using committed schema with existing `read_at` and index. Preserves safe historical notification snapshots without leaking fresh task data after reassignment.
+- Audit Log Viewer implemented (`/audit`, `GET /api/audit`): restricted strictly to HEAD (`requireRole("HEAD")` and server-side 403 for DEPUTY and EMPLOYEE). Append-only; safe projections strip credential secrets, passwords, and private keys.
+- Navigation enhanced: desktop header navigation with NotificationBell; responsive mobile navigation (~390px) with 4 primary tabs (`Hôm nay`, `Tổng quan`, `Công việc`, `Lịch`) and a responsive `Thêm` (More) sheet for secondary destinations (`Báo cáo`, `Tìm kiếm`, `Thông báo`, and `Kiểm toán` for HEAD).
+- Zero database migrations or schema drift (`drizzle/0000_initial_v1_1.sql` unchanged, 9 tables, 6 enums). Zero Google Drive calls from Dashboard, Reports, Search, Notifications, or Audit.

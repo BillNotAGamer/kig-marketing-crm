@@ -896,4 +896,16 @@ Một báo cáo chính thức thuộc Task/ngày, không phải assignee/ngày. 
 
 Lịch là tầng trình diễn và truy vấn dạng chỉ đọc dựa trên dữ liệu Task và Daily Progress hiện có. Tuyệt đối không tạo thêm bảng mới, không có migration hay drift schema. Các mốc trên lịch được suy ra trực tiếp từ `assignedDate` (mốc GIAO / BẮT ĐẦU "Giao") và `dueDate` (mốc HẠN CHÓT "Hạn"). Khi `assignedDate === dueDate`, các mốc được gộp thành một mốc duy nhất ("Giao & Hạn") thay vì hiển thị trùng lặp. Tuyệt đối không sinh các mốc thời lượng giả định cho các ngày nằm giữa ngày giao và ngày hạn. Toàn bộ tính toán ngày sử dụng phép toán ngày độc lập múi giờ (zero-timezone-shift), tuần bắt đầu từ Thứ Hai, và ngày nghiệp vụ hiện tại lấy theo `Asia/Ho_Chi_Minh`. Quyền xem trên lịch kế thừa nghiêm ngặt phân quyền tài nguyên Task: HEAD và DEPUTY xem toàn bộ việc của nhóm, EMPLOYEE chỉ xem việc được phân công cho chính mình, loại bỏ hoàn toàn việc đã xóa mềm. Giao diện mobile ưu tiên dạng agenda (~390px) với thanh cuộn 7 ngày nhỏ gọn, thanh điều hướng đáy cố định và trung tâm hoạt động "Hôm nay" của nhân viên, không tràn màn hình ngang. Các dịch vụ Lịch hoàn toàn không gọi API Google Drive.
 
+## Bảo vệ triển khai Tổng quan, Báo cáo, Tìm kiếm, Thông báo & Kiểm toán (Phase 7, giữ V1.1)
+
+Phase 7 triển khai các chức năng Tổng quan vận hành, Báo cáo lịch sử, Tìm kiếm công việc, Trung tâm thông báo và Nhật ký kiểm toán hoàn toàn trên nền tảng schema baseline hiện có, không migration, không thêm bảng hay enum:
+
+- Tổng quan hôm nay (Dashboard) tổng hợp động theo múi giờ `Asia/Ho_Chi_Minh` cho các công việc duy nhất chưa bị xóa được giao vào hoặc trước hôm nay và đang OPEN hoặc đã có `task_daily_update` hôm nay. Khi chuyển giao việc trong ngày, báo cáo đã nộp được quy gán cho người báo cáo thực tế `report.userId` và việc chưa báo cáo được quy gán cho người nhận hiện tại `task.assignedToId`, không làm tăng oan lỗi chưa báo cáo cho người nhận mới.
+- Công việc quá hạn được tính động từ điều kiện `status === 'OPEN' && dueDate !== null && dueDate < businessToday`. Tuyệt đối không lưu vết trạng thái OVERDUE.
+- Báo cáo lịch sử phản ánh nghiêm ngặt các sự kiện đã lưu trong khoảng ngày giới hạn (tối đa 366 ngày). Tuyệt đối không dựng lại các chỉ số `NOT_REPORTED` giả định trong quá khứ. Bảng chi tiết nhóm theo người báo cáo thực tế `task_daily_update.userId`.
+- Tìm kiếm công việc xử lý chuỗi ký tự thường với các ký tự đại diện `%` và `_` được escape an toàn, phân trang có giới hạn (tối đa 50 việc), và phân quyền nghiêm ngặt (EMPLOYEE không bao giờ phát hiện được việc của người khác).
+- Trung tâm thông báo cách ly theo người nhận (`user_id === actor.id`), hỗ trợ đánh dấu đã đọc nguyên tử dựa trên cột `notification.read_at` có sẵn, và không dùng thông báo cũ để vượt quyền đọc công việc hiện tại.
+- Nhật ký kiểm toán chỉ dành riêng cho HEAD (DEPUTY và EMPLOYEE bị cấm với mã lỗi 403), chỉ đọc, append-only, loại bỏ mọi mật khẩu, khóa bí mật hay credential.
+- Hoàn toàn không phát sinh lệnh gọi API Google Drive nào từ các dịch vụ Dashboard, Báo cáo, Tìm kiếm, Thông báo hay Kiểm toán.
+
 [Database](04-DATABASE-DESIGN-VN.md) · [Authorization](05-AUTHORIZATION-MODEL-VN.md) · [English](README.md) · [Changelog](CHANGELOG.md).

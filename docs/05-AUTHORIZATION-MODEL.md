@@ -649,3 +649,38 @@ Phase 6 implements read-oriented Calendar and Mobile Task query authorization st
 - All task mutations continue through existing authoritative Phase 3/4/5 command endpoints with full validation, locking, and auditing.
 - GET `/api/calendar` enforces canonical server sessions and rejects banned/inactive accounts with 401 Unauthorized. Strict Zod query validation rejects malformed ISO dates, inverted date ranges (`from > to`), and query windows exceeding 62 calendar days with controlled 400 Bad Request. Responses use `Cache-Control: no-store`.
 - Mobile Bottom Navigation respects role boundaries and existing protected shell layouts without hardcoding inaccessible destinations.
+
+## Phase 7 Dashboard, Reports, Search, Notifications & Audit authorization - 2026-09-19 (V1.1)
+
+Phase 7 implements server-authoritative read and mutation controls across all newly introduced operational surfaces:
+
+### 1. Dashboard Authorization (`/dashboard`, `GET /api/dashboard`)
+
+- HEAD and DEPUTY access the Team Dashboard (`isTeamView = true`), showing aggregate metrics and a per-employee operational breakdown across all active and relevant historical users.
+- EMPLOYEE access is strictly restricted to the Personal Dashboard (`isTeamView = false`). Only tasks currently visible to the employee (`task.assignedToId === actor.id`) participate in summary counts. Foreign tasks, other employees' operational metrics, and team-wide tables are strictly withheld server-side.
+- Zero client-supplied parameters: `businessToday` is server-derived for `Asia/Ho_Chi_Minh`. Actor identity is validated server-side from canonical Better Auth session cookies.
+
+### 2. Historical Reports Authorization (`/reports`, `GET /api/reports`)
+
+- HEAD and DEPUTY access Team Reports (`isTeamView = true`) with per-reporter breakdown across the team.
+- EMPLOYEE access is restricted to Personal Reports (`isTeamView = false`), reflecting only tasks/reports currently visible to the actor. An employee cannot recover past task data for tasks that have since been reassigned or deleted.
+- Date ranges are strictly bounded to at most 366 days with `from <= to` enforced server-side.
+
+### 3. Task Search Authorization (`/search`, `GET /api/search/tasks`)
+
+- HEAD and DEPUTY search all non-deleted team tasks. Assignee name search is supported for team roles.
+- EMPLOYEE searches only own currently assigned non-deleted tasks (`assignedToId === actor.id`). Foreign tasks never match, even when the exact title or description is queried. Match counts never leak foreign task existence.
+- Query string is trimmed, bounded to 2–100 characters, and treated as literal substrings with `%` and `_` escaped. Pagination is bounded (max 50).
+
+### 4. Notification Center Authorization (`/notifications`, `/api/notifications/*`)
+
+- Recipient isolation: each user reads only notifications addressed to that same user (`user_id === actor.id`). HEAD and DEPUTY cannot read or mark other users' notifications.
+- Mutations (`POST /api/notifications/[id]/read` and `POST /api/notifications/read-all`) enforce origin verification and verify recipient ownership. Marking another user's notification returns 0 updated rows and `false`.
+- Notifications do not bypass task authorization: historical notifications may display their safe persisted message snapshot, but clicking the task link passes through full task authorization (returning 404 if no longer readable).
+
+### 5. Audit Log Authorization (`/audit`, `GET /api/audit`)
+
+- HEAD only: authorized administrators may list and filter system audit records.
+- DEPUTY and EMPLOYEE are strictly forbidden: `/audit` redirects to `/access-denied` via `requireRole("HEAD")`, and `GET /api/audit` returns HTTP 403 Forbidden.
+- Audit records are append-only; no mutation, deletion, or patch endpoints exist.
+- Safe projections strip all password hashes, session tokens, Google API keys, and credential secrets.

@@ -1092,3 +1092,39 @@ Calendar semantics are derived purely from existing `task.assigned_date` and `ta
 - Non-deleted tasks across all lifecycle states (`OPEN`, `COMPLETED`, `CANCELLED`) remain visible with appropriate visual affordances.
 
 Date queries are strictly bounded to at most 62 calendar days via `listCalendarTasks()` service. The query applies date filtering at the PostgreSQL level: `(assigned_date BETWEEN from AND to) OR (due_date BETWEEN from AND to)` under existing indexes. When the query range includes current business today (`Asia/Ho_Chi_Minh`), today's official daily progress status is batch-joined via `task_daily_update` without N+1 queries. No external Google Drive API calls are invoked from Calendar services.
+
+## Phase 7 Dashboard, Reports, Search, Notifications & Audit persistence - 2026-09-19 (V1.1 unchanged)
+
+Phase 7 implements read-oriented Dashboard, Historical Reports, Task Search, Notification Center, and Audit Log viewing over existing baseline data. It requires zero database schema migrations, zero new tables, zero index additions, and zero enum changes. The initial migration `drizzle/0000_initial_v1_1.sql` remains identical to Phase 1, maintaining the strict 9-table, 6-enum schema baseline.
+
+### 1. Operational Today Dashboard
+
+- Today's operational task set is server-derived for `Asia/Ho_Chi_Minh`: unique non-deleted tasks where `assigned_date <= businessToday` AND (`status = 'OPEN'` OR task has an official `task_daily_update` on `businessToday`).
+- Tasks completed before today with no report today do not inflate operational metrics.
+- Same-day reassignment attribution: if a report exists today, COMPLETED / NOT_COMPLETED is attributed to `report.userId`; if no report exists, NOT_REPORTED is attributed to current `task.assignedToId`. No duplicate NOT_REPORTED is credited to a newly reassigned employee when a report was already submitted.
+- Overdue count is derived dynamically (`status = 'OPEN' AND due_date IS NOT NULL AND due_date < businessToday`). Never persisted.
+
+### 2. Historical Operational Reports
+
+- Persisted facts only over strict ISO date ranges (max 366 days, default 30 days ending `businessToday`).
+- Persisted metrics: submitted progress reports count, completed count, not-completed count, completion ratio among submitted reports (`completed / submitted * 100`), tasks completed in range, tasks assigned in range, and current overdue count.
+- Zero fabricated historical NOT_REPORTED metrics. Historical unassigned or unrecorded operational states are never simulated.
+- Per-reporter breakdown groups by actual `task_daily_update.userId`, preserving representation for historical or inactive users.
+
+### 3. Task Search
+
+- Substring search on `task.title` and `task.description` (plus assignee display name for team roles) using parameterized Drizzle queries.
+- Escapes SQL wildcard characters `%` and `_` to guarantee literal substring semantics.
+- Bounded pagination (default 20, max 50) with deterministic ordering (`updated_at DESC, id DESC`).
+
+### 4. Notification Center & Read State
+
+- Uses committed `notification` table with existing `read_at: timestamp with time zone NULL` and composite index `notification_user_read_created_idx (user_id, read_at, created_at)`.
+- Recipient-isolated: queries strictly filter `user_id = actor.id`. Atomic `markNotificationRead` and `markAllNotificationsRead` execute via `.returning({ id: notification.id })`.
+- Preserves safe historical notification snapshots without exposing current task data when recipient no longer has task read access.
+
+### 5. Audit Log Viewer
+
+- Read-only queries against existing `audit_log` table restricted strictly to HEAD.
+- Sanitized projection strips sensitive authentication, token, credential, and password fields. Bounded pagination (default 25, max 50).
+- Zero Google Drive API calls are invoked from Dashboard, Reports, Search, Notifications, or Audit services.
