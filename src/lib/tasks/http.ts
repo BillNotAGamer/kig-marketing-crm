@@ -1,6 +1,7 @@
 import { ZodError } from "zod";
 import { AccessError } from "../auth/permissions";
 import type { taskService } from "./service";
+import { mutationRequestError } from "../http-security";
 
 export type TaskCommand = "metadata" | "reassign" | "cancel" | "soft-delete";
 export async function tasksHttp(
@@ -13,11 +14,10 @@ export async function tasksHttp(
   const headers = { "Cache-Control": "no-store" };
   const response = (body: unknown, status = 200) =>
     Response.json(body, { status, headers });
-  if (
-    request.method !== "GET" &&
-    request.headers.get("origin") !== new URL(origin).origin
-  )
-    return response({ error: "Invalid origin." }, 403);
+  if (request.method === "POST") {
+    const invalid = mutationRequestError(request, origin);
+    if (invalid) return invalid;
+  }
   try {
     if (request.method === "GET" && !command) {
       if (id === "assignees")

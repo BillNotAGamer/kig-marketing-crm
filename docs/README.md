@@ -5,6 +5,8 @@
 **Project:** KIG Marketing CRM
 **Workspace:** `F:\Coding\Web development\KIG Marketing CRM`
 **Status:** APPROVED BASELINE — V1.1
+
+Phase 8 security hardening preserves V1.1. Production configuration, Drive folder isolation, readiness, backup and credential procedures are maintained in `06-PRODUCTION-READINESS.md`; they do not change approved roles or workflows.
 **Primary stakeholder specification:** [Vietnamese](README-VN.md)
 
 This English specification is optimized for engineering agents. Sections 1–31 and the V1.1 additions correspond to the Vietnamese business baseline. The original approved English technical baseline is retained in full below as an appendix; the dedicated database and authorization documents organize that detail.

@@ -1128,3 +1128,7 @@ Phase 7 implements read-oriented Dashboard, Historical Reports, Task Search, Not
 - Read-only queries against existing `audit_log` table restricted strictly to HEAD.
 - Sanitized projection strips sensitive authentication, token, credential, and password fields. Bounded pagination (default 25, max 50).
 - Zero Google Drive API calls are invoked from Dashboard, Reports, Search, Notifications, or Audit services.
+
+# Phase 8 operational safety
+
+The schema remains nine tables/six enums with no Phase 8 migration. `/api/health` performs only parameterized `SELECT 1` and returns no database identity. Development bootstrap is distinct from incremental migration; all fixture and database tooling retains the explicit environment/target guard.

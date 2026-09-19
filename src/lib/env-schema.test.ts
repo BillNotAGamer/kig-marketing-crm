@@ -5,7 +5,7 @@ import { parseServerEnv, serverEnvSchema } from "./env-schema";
 describe("private server environment validation", () => {
   it("requires all three server variables without emitting values", () => {
     expect(() => parseServerEnv({})).toThrow(
-      "DATABASE_URL, BETTER_AUTH_SECRET, BETTER_AUTH_URL",
+      "DATABASE_URL, BETTER_AUTH_SECRET, BETTER_AUTH_URL, KIG_DATABASE_ENV",
     );
     const privateValue = "do-not-echo-this-rejected-value";
     try {
@@ -13,6 +13,7 @@ describe("private server environment validation", () => {
         DATABASE_URL: privateValue,
         BETTER_AUTH_SECRET: privateValue,
         BETTER_AUTH_URL: privateValue,
+        KIG_DATABASE_ENV: "development",
       });
       throw new Error("Expected validation failure");
     } catch (error) {

@@ -1,6 +1,7 @@
 import { ZodError } from "zod";
 import { AccessError } from "../auth/permissions";
 import type { userService } from "./service";
+import { mutationRequestError } from "../http-security";
 
 export async function usersHttp(
   request: Request,
@@ -8,11 +9,10 @@ export async function usersHttp(
   origin: string,
   target?: string,
 ) {
-  if (
-    request.method !== "GET" &&
-    request.headers.get("origin") !== new URL(origin).origin
-  )
-    return Response.json({ error: "Invalid origin." }, { status: 403 });
+  if (request.method === "POST") {
+    const invalid = mutationRequestError(request, origin);
+    if (invalid) return invalid;
+  }
   try {
     if (request.method === "GET" && !target)
       return Response.json(await service.list(request.headers), {

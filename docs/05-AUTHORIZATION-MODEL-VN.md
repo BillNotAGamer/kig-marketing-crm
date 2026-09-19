@@ -229,3 +229,7 @@ Phase 7 thực thi các biện pháp kiểm soát phân quyền truy cập và t
 - DEPUTY và EMPLOYEE bị cấm tuyệt đối: truy cập `/audit` bị chuyển hướng về `/access-denied` qua `requireRole("HEAD")`, và gọi `GET /api/audit` bị trả về mã lỗi HTTP 403 Forbidden.
 - Nhật ký kiểm toán là dạng append-only (chỉ ghi thêm); tuyệt đối không có endpoint sửa đổi, xóa hoặc vá (patch) dữ liệu kiểm toán.
 - DTO an toàn loại bỏ toàn bộ mật khẩu, mã băm, token phiên và khóa bí mật.
+
+# Biên bảo mật Phase 8
+
+Mutation có xác thực yêu cầu Origin khớp chính xác cấu hình và content type JSON. Role/trạng thái banned chuẩn từ database được kiểm tra ở mọi thao tác; reset/đổi mật khẩu, vô hiệu hóa và đổi role thu hồi session bị ảnh hưởng. Quyền đính kèm Drive còn yêu cầu chứng minh tài nguyên My Drive nằm dưới thư mục cho phép đã cấu hình. Security header cấm đóng khung ứng dụng và chỉ cho phép frame xem trước Drive/Docs đã duyệt.

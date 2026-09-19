@@ -73,5 +73,11 @@ describe("Search Model & Validation", () => {
 
     // Backslash
     expect(escapeSqlLikePattern("test\\path")).toBe("test\\\\path");
+
+    // Attack-like input remains literal data for Drizzle's parameterized ILIKE.
+    expect(escapeSqlLikePattern("' OR 1=1 --")).toBe("' OR 1=1 --");
+    expect(escapeSqlLikePattern('"; DROP TABLE task; --')).toBe(
+      '"; DROP TABLE task; --',
+    );
   });
 });

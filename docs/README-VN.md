@@ -8,6 +8,8 @@
 **Phiên bản:** 1.1 (Version 1.1)
 **Trạng thái:** Baseline đã chốt
 
+Gia cố bảo mật Phase 8 giữ nguyên V1.1. Cấu hình production, cách ly thư mục Drive, readiness, backup và quy trình credential được ghi tại `06-PRODUCTION-READINESS-VN.md`; chúng không thay đổi role hoặc quy trình đã duyệt.
+
 ---
 
 # 1. Mục tiêu hệ thống

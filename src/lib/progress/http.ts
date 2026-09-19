@@ -1,6 +1,7 @@
 import { ZodError } from "zod";
 import { AccessError } from "../auth/permissions";
 import type { progressService } from "./service";
+import { mutationRequestError } from "../http-security";
 
 export async function progressHttp(
   request: Request,
@@ -11,11 +12,10 @@ export async function progressHttp(
 ) {
   const response = (body: unknown, status = 200) =>
     Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
-  if (
-    request.method !== "GET" &&
-    request.headers.get("origin") !== new URL(origin).origin
-  )
-    return response({ error: "Invalid origin." }, 403);
+  if (request.method === "POST") {
+    const invalid = mutationRequestError(request, origin);
+    if (invalid) return invalid;
+  }
   try {
     if (request.method === "GET" && !progressId)
       return response(await service.getTaskProgress(request.headers, id));

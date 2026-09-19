@@ -68,9 +68,11 @@ const DEFAULT_DEV_FILES: Record<string, Partial<DriveMetadata>> = {
 export class GoogleDriveApiClient implements DriveClient {
   private client: JWT | null = null;
   private sharedDriveId?: string;
+  private allowedFolderId?: string;
 
   constructor(env: ServerEnv) {
     this.sharedDriveId = env.GOOGLE_DRIVE_SHARED_DRIVE_ID;
+    this.allowedFolderId = env.GOOGLE_DRIVE_ALLOWED_FOLDER_ID;
     if (
       env.GOOGLE_DRIVE_SERVICE_ACCOUNT_EMAIL &&
       env.GOOGLE_DRIVE_SERVICE_ACCOUNT_PRIVATE_KEY
@@ -127,8 +129,36 @@ export class GoogleDriveApiClient implements DriveClient {
       );
     }
 
+    const data = await this.fetchMetadata(fileId, resourceKey);
+    if (data.trashed)
+      throw new AccessError(
+        400,
+        "The requested Google Drive file has been trashed.",
+      );
+    if (data.mimeType === "application/vnd.google-apps.folder")
+      throw new AccessError(
+        400,
+        "Google Drive folders cannot be attached as task deliverables.",
+      );
+    if (this.sharedDriveId && data.driveId !== this.sharedDriveId)
+      throw new AccessError(
+        403,
+        "The requested file does not belong to the authorized Shared Drive.",
+      );
+    if (this.allowedFolderId) await this.assertAllowedFolder(data);
+    return data;
+  }
+
+  private async fetchMetadata(
+    fileId: string,
+    resourceKey?: string,
+  ): Promise<DriveMetadata> {
+    const client = this.client;
+    if (!client)
+      throw new AccessError(503, "Google Drive integration is not configured.");
     const params = new URLSearchParams({
-      fields: "id,name,mimeType,webViewLink,resourceKey,driveId,trashed",
+      fields:
+        "id,name,mimeType,webViewLink,resourceKey,driveId,trashed,parents",
       supportsAllDrives: "true",
     });
 
@@ -140,7 +170,7 @@ export class GoogleDriveApiClient implements DriveClient {
     }
 
     try {
-      const response = await this.client.request<DriveMetadata>({
+      const response = await client.request<DriveMetadata>({
         url,
         method: "GET",
         headers,
@@ -152,27 +182,6 @@ export class GoogleDriveApiClient implements DriveClient {
         throw new AccessError(
           404,
           "Google Drive file not found or inaccessible.",
-        );
-      }
-
-      if (data.trashed) {
-        throw new AccessError(
-          400,
-          "The requested Google Drive file has been trashed.",
-        );
-      }
-
-      if (data.mimeType === "application/vnd.google-apps.folder") {
-        throw new AccessError(
-          400,
-          "Google Drive folders cannot be attached as task deliverables.",
-        );
-      }
-
-      if (this.sharedDriveId && data.driveId !== this.sharedDriveId) {
-        throw new AccessError(
-          403,
-          "The requested file does not belong to the authorized Shared Drive.",
         );
       }
 
@@ -211,17 +220,39 @@ export class GoogleDriveApiClient implements DriveClient {
       );
     }
   }
+
+  private async assertAllowedFolder(file: DriveMetadata) {
+    const root = this.allowedFolderId!;
+    const queue = [...(file.parents ?? [])];
+    const visited = new Set<string>();
+    for (let depth = 0; queue.length && depth < 32; depth++) {
+      const id = queue.shift()!;
+      if (id === root) return;
+      if (visited.has(id)) continue;
+      visited.add(id);
+      const parent = await this.fetchMetadata(id);
+      if (parent.trashed) break;
+      queue.push(...(parent.parents ?? []));
+    }
+    throw new AccessError(
+      403,
+      "The requested file is outside the authorized Google Drive folder.",
+    );
+  }
 }
 
 export class MockDriveClient implements DriveClient {
   private files = new Map<string, DriveMetadata>();
   private sharedDriveId?: string;
+  private allowedFolderId?: string;
 
   constructor(
     initialFiles?: Record<string, Partial<DriveMetadata>>,
     sharedDriveId?: string,
+    allowedFolderId?: string,
   ) {
     this.sharedDriveId = sharedDriveId;
+    this.allowedFolderId = allowedFolderId;
     if (initialFiles) {
       for (const [id, meta] of Object.entries(initialFiles)) {
         this.registerFile(id, meta);
@@ -239,6 +270,7 @@ export class MockDriveClient implements DriveClient {
       resourceKey: metadata.resourceKey,
       driveId: metadata.driveId,
       trashed: metadata.trashed ?? false,
+      parents: metadata.parents,
     });
   }
 
@@ -285,6 +317,28 @@ export class MockDriveClient implements DriveClient {
         "The requested file does not belong to the authorized Shared Drive.",
       );
     }
+    if (this.allowedFolderId) {
+      const queue = [...(file.parents ?? [])];
+      const visited = new Set<string>();
+      let accepted = false;
+      for (let depth = 0; queue.length && depth < 32; depth++) {
+        const id = queue.shift()!;
+        if (id === this.allowedFolderId) {
+          accepted = true;
+          break;
+        }
+        if (visited.has(id)) continue;
+        visited.add(id);
+        const parent = this.files.get(id);
+        if (!parent || parent.trashed) break;
+        queue.push(...(parent.parents ?? []));
+      }
+      if (!accepted)
+        throw new AccessError(
+          403,
+          "The requested file is outside the authorized Google Drive folder.",
+        );
+    }
 
     return {
       ...file,
@@ -304,6 +358,7 @@ export function createGoogleDriveClient(env: ServerEnv): DriveClient {
     return new MockDriveClient(
       DEFAULT_DEV_FILES,
       env.GOOGLE_DRIVE_SHARED_DRIVE_ID,
+      env.GOOGLE_DRIVE_ALLOWED_FOLDER_ID,
     );
   }
   return new GoogleDriveApiClient(env);

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-19 — Phase 8 security and production hardening
+
+- Added exact-origin/JSON mutation enforcement, restrictive security headers, sanitized database readiness, production environment validation and safe bootstrap/incremental migration separation.
+- Added bounded Google Drive My Drive allowed-folder ancestry enforcement without changing the read-only scope or performing Drive writes.
+- Added synchronized production-readiness runbooks; Business Baseline remains Version 1.1 and the database schema remains unchanged.
+
 ## 2026-09-18 — Business Baseline V1.1
 
 - V1.0 baseline established and retained.

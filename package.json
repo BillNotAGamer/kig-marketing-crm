@@ -17,6 +17,7 @@
     "auth:schema": "tsx scripts/auth-schema.mts",
     "auth:schema:check": "tsx scripts/auth-schema.mts --check",
     "db:generate": "drizzle-kit generate --name=initial_v1_1",
+    "db:bootstrap": "tsx scripts/database-tool.ts bootstrap",
     "db:migrate": "tsx scripts/database-tool.ts migrate",
     "db:studio": "tsx scripts/database-tool.ts studio",
     "db:check": "drizzle-kit check && npm run auth:schema:check",

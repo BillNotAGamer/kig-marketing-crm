@@ -328,3 +328,7 @@ Phase 7 triển khai các chức năng Tổng quan (Dashboard), Báo cáo lịch
 - Truy vấn chỉ đọc trên bảng `audit_log` dành riêng cho HEAD.
 - DTO an toàn loại bỏ toàn bộ mật khẩu, mã băm, token phiên, khóa bí mật Google và thông tin xác thực. Phân trang giới hạn (mặc định 25, tối đa 50 bản ghi).
 - Tuyệt đối không thực hiện bất kỳ lệnh gọi API Google Drive nào từ các dịch vụ Dashboard, Báo cáo, Tìm kiếm, Thông báo hay Kiểm toán.
+
+# An toàn vận hành Phase 8
+
+Schema vẫn gồm chín bảng/sáu enum và không có migration Phase 8. `/api/health` chỉ chạy `SELECT 1` có tham số và không trả về danh tính database. Bootstrap development tách biệt với migration tăng dần; mọi công cụ fixture/database giữ chốt môi trường và kiểm tra đích rõ ràng.

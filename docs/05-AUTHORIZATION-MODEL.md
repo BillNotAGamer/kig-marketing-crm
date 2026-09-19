@@ -684,3 +684,7 @@ Phase 7 implements server-authoritative read and mutation controls across all ne
 - DEPUTY and EMPLOYEE are strictly forbidden: `/audit` redirects to `/access-denied` via `requireRole("HEAD")`, and `GET /api/audit` returns HTTP 403 Forbidden.
 - Audit records are append-only; no mutation, deletion, or patch endpoints exist.
 - Safe projections strip all password hashes, session tokens, Google API keys, and credential secrets.
+
+# Phase 8 security boundary
+
+Authenticated mutations require the exact configured Origin and JSON content type. Canonical database role/banned state is checked for every operation; password reset, password change, disable and role change revoke affected sessions. Drive attachment authorization additionally requires proof that My Drive resources descend from the configured allowed folder. Security headers deny framing while permitting only approved Drive/Docs preview frames.

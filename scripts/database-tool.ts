@@ -6,8 +6,8 @@ import { requireDevelopmentDatabase, safeDatabaseError } from "./database-env";
 
 async function main() {
   const command = process.argv[2];
-  if (command !== "migrate" && command !== "studio")
-    throw new Error("Expected migrate or studio.");
+  if (!["bootstrap", "migrate", "studio"].includes(command ?? ""))
+    throw new Error("Expected bootstrap, migrate or studio.");
   const url = requireDevelopmentDatabase();
   const client = postgres(url, { max: 1, connect_timeout: 10, prepare: false });
   try {
@@ -20,11 +20,11 @@ async function main() {
     const types =
       await client`SELECT t.typname FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace WHERE n.nspname='public' AND t.typtype='e'`;
     if (
-      command === "migrate" &&
+      command === "bootstrap" &&
       (tables.length > 0 || types.length > 0 || journal[0]?.journal !== null)
     ) {
       throw new Error(
-        "Initial migration requires an empty development schema and no migration journal. Existing schema/data requires a separate explicit review; nothing was mutated.",
+        "Bootstrap requires an empty development schema and no migration journal. Nothing was mutated.",
       );
     }
   } finally {
@@ -34,7 +34,7 @@ async function main() {
   const cli = join(dirname(require.resolve("drizzle-kit")), "bin.cjs");
   const args = [
     cli,
-    command,
+    command === "bootstrap" ? "migrate" : command,
     ...(command === "studio" ? ["--host=127.0.0.1"] : []),
   ];
   if (command === "studio")
@@ -49,8 +49,8 @@ async function main() {
       "Drizzle command failed; output withheld to protect connection credentials.",
     );
   console.log(
-    command === "migrate"
-      ? "Development migration applied. Run npm run db:verify and npm run test:db next."
+    command === "bootstrap" || command === "migrate"
+      ? "Development migrations applied. Run npm run db:verify next."
       : "Drizzle Studio session ended.",
   );
 }
@@ -60,7 +60,7 @@ main().catch((error: unknown) => {
     (error.message.startsWith("Database command requires") ||
       error.message.startsWith("An authorized") ||
       error.message.startsWith("Database identity") ||
-      error.message.startsWith("Initial migration") ||
+      error.message.startsWith("Bootstrap") ||
       error.message.startsWith("Drizzle command") ||
       error.message.startsWith("Expected"));
   console.error(expected ? error.message : safeDatabaseError(error));

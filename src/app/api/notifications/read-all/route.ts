@@ -1,16 +1,12 @@
 import { getServerEnv } from "@/lib/env";
 import { AccessError } from "@/lib/auth/permissions";
 import { getNotifications } from "@/lib/notifications/server";
+import { mutationRequestError } from "@/lib/http-security";
 
 export async function POST(request: Request) {
   const env = getServerEnv();
-  const origin = request.headers.get("origin");
-  if (origin && origin !== new URL(env.BETTER_AUTH_URL).origin) {
-    return Response.json(
-      { error: "Nguồn yêu cầu không hợp lệ." },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  const invalid = mutationRequestError(request, env.BETTER_AUTH_URL);
+  if (invalid) return invalid;
 
   try {
     const count = await getNotifications().markAllNotificationsRead(

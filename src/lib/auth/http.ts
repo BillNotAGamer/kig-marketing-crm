@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 import type { ServerEnv } from "../env-schema";
 import { createAuth, type AuthDatabase } from "./factory";
 import { loginSchema } from "./validation";
+import { mutationRequestError } from "../http-security";
 
 // All account/admin/generic self-update endpoints are closed at the HTTP boundary.
 export async function authHttp(
@@ -17,11 +18,10 @@ export async function authHttp(
     (request.method === "GET" && path === "/api/auth/get-session");
   if (!allowed)
     return Response.json({ error: "Endpoint unavailable." }, { status: 403 });
-  if (
-    request.method === "POST" &&
-    request.headers.get("origin") !== new URL(env.BETTER_AUTH_URL).origin
-  )
-    return Response.json({ error: "Invalid origin." }, { status: 403 });
+  if (request.method === "POST") {
+    const invalid = mutationRequestError(request, env.BETTER_AUTH_URL);
+    if (invalid) return invalid;
+  }
   if (path === "/api/auth/sign-in/email") {
     const parsed = loginSchema.safeParse(
       await request

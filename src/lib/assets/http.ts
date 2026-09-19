@@ -1,6 +1,7 @@
 import { ZodError } from "zod";
 import { AccessError } from "../auth/permissions";
 import type { assetService } from "./service";
+import { mutationRequestError } from "../http-security";
 
 export async function assetsHttp(
   request: Request,
@@ -13,11 +14,9 @@ export async function assetsHttp(
   const response = (body: unknown, status = 200) =>
     Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 
-  if (
-    request.method !== "GET" &&
-    request.headers.get("origin") !== new URL(origin).origin
-  ) {
-    return response({ error: "Invalid origin." }, 403);
+  if (request.method === "POST") {
+    const invalid = mutationRequestError(request, origin);
+    if (invalid) return invalid;
   }
 
   try {

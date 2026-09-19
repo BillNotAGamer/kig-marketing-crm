@@ -1,5 +1,7 @@
 # KIG Marketing CRM
 
+Production hardening and deployment prerequisites are documented in [docs/06-PRODUCTION-READINESS.md](docs/06-PRODUCTION-READINESS.md). The readiness endpoint is `GET /api/health`.
+
 Internal Marketing task-management CRM for KIG Holding. The repository includes persistence, authentication, server-side RBAC, HEAD-only user administration, Task Core/lifecycle, Phase 4 Daily Progress, Phase 5 Google Drive Task Assets, Phase 6 Calendar & Mobile Task Experience, and Phase 7 Dashboard, Reports, Search, Notifications & Audit Viewer.
 
 Use Node.js **24 LTS** (`>=24 <25`); `.nvmrc` and `.node-version` pin 24.19.0. npm 11.17.0 is the recorded installation tool; npm 10 and 11 are permitted. On Windows PowerShell, use `npm.cmd` if execution policy blocks `npm.ps1`.

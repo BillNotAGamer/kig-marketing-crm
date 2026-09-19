@@ -17,6 +17,7 @@ export interface DriveMetadata {
   resourceKey?: string;
   driveId?: string;
   trashed?: boolean;
+  parents?: string[];
 }
 
 export interface DriveClient {
