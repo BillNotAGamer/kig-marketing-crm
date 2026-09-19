@@ -52,14 +52,15 @@ describe("AssetSection Preview Modal", () => {
     });
     expect(dialogTitle).toBeInTheDocument();
 
-    // Dialog content has enlarged dimensions
+    // Dialog content has enlarged dimensions with real viewport height
     const dialogContent = screen.getByRole("dialog");
     expect(dialogContent).toHaveClass("sm:max-w-[1200px]");
     expect(dialogContent).toHaveClass("sm:w-[94vw]");
+    expect(dialogContent).toHaveClass("h-[88vh]");
     expect(dialogContent).toHaveClass("max-h-[92vh]");
     expect(dialogContent).toHaveClass("w-[calc(100vw-1rem)]");
 
-    // Preview body container does not constrain with aspect-video and has ~70vh height
+    // Preview body container flexes to fill available height and does not constrain with aspect-video
     const iframe = dialogContent.querySelector("iframe");
     expect(iframe).not.toBeNull();
     if (!iframe) throw new Error("iframe not found");
@@ -68,7 +69,8 @@ describe("AssetSection Preview Modal", () => {
     const previewContainer = iframe.parentElement;
     expect(previewContainer).not.toBeNull();
     expect(previewContainer).not.toHaveClass("aspect-video");
-    expect(previewContainer).toHaveClass("sm:h-[70vh]");
+    expect(previewContainer).toHaveClass("flex-1");
+    expect(previewContainer).toHaveClass("min-h-0");
     expect(previewContainer).toHaveClass("overflow-x-hidden");
 
     // Footer elements

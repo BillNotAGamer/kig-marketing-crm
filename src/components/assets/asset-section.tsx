@@ -232,16 +232,19 @@ export function AssetSection({
             if (!open) setPreviewAsset(null);
           }}
         >
-          <DialogContent className="flex flex-col w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] sm:w-[94vw] sm:max-w-[1200px] max-h-[92vh] p-4 sm:p-6 gap-3 sm:gap-4 overflow-hidden">
-            <DialogHeader className="shrink-0 space-y-1">
-              <DialogTitle className="truncate pr-8 text-base sm:text-lg font-semibold">
+          <DialogContent className="flex flex-col w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] sm:w-[94vw] sm:max-w-[1200px] h-[88vh] max-h-[92vh] p-4 sm:p-6 gap-3 sm:gap-4 overflow-hidden">
+            <DialogHeader className="shrink-0 space-y-1 min-w-0">
+              <DialogTitle
+                className="truncate pr-8 text-base sm:text-lg font-semibold overflow-hidden text-ellipsis whitespace-nowrap"
+                title={previewAsset?.fileName ?? "Bản xem trước"}
+              >
                 {previewAsset?.fileName ?? "Bản xem trước"}
               </DialogTitle>
-              <DialogDescription className="text-xs sm:text-sm text-muted-foreground truncate">
+              <DialogDescription className="text-xs sm:text-sm text-muted-foreground truncate overflow-hidden text-ellipsis whitespace-nowrap">
                 Bản xem trước trực tiếp từ Google Drive.
               </DialogDescription>
             </DialogHeader>
-            <div className="relative flex-1 min-h-0 w-full h-[65vh] sm:h-[70vh] max-h-[72vh] overflow-hidden overflow-x-hidden rounded-lg border bg-muted/40 flex items-center justify-center">
+            <div className="relative flex-1 min-h-0 w-full overflow-hidden overflow-x-hidden rounded-lg border bg-muted/40 flex items-center justify-center">
               {previewAsset && (
                 <iframe
                   src={previewAsset.previewUrl}
