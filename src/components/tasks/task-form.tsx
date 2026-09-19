@@ -17,6 +17,7 @@ import {
   type TaskDTO,
 } from "@/lib/tasks/types";
 import type { BrandDTO } from "@/lib/brands/types";
+import { roleDisplay, taskPriorityDisplay } from "@/lib/ui-labels";
 
 export function TaskForm({
   options,
@@ -101,13 +102,13 @@ export function TaskForm({
       );
       const data = await result.json();
       if (!result.ok) {
-        setError(data.error || "Unable to save task.");
+        setError(data.error || "Không thể lưu công việc.");
         return;
       }
       router.replace(`/tasks/${task?.id ?? data.id}`);
       router.refresh();
     } catch {
-      setError("Unable to save task. Please retry.");
+      setError("Không thể lưu công việc. Vui lòng thử lại.");
     } finally {
       setBusy(false);
     }
@@ -117,12 +118,12 @@ export function TaskForm({
   return (
     <>
       <form
-        aria-label={task ? "Edit task" : "Create task"}
+        aria-label={task ? "Chỉnh sửa công việc" : "Tạo công việc"}
         onSubmit={submit}
         className="max-w-2xl space-y-5"
       >
         <div className="space-y-2">
-          <Label htmlFor="task-title">Title</Label>
+          <Label htmlFor="task-title">Tiêu đề</Label>
           <Input
             id="task-title"
             name="title"
@@ -133,7 +134,7 @@ export function TaskForm({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="task-description">Description</Label>
+          <Label htmlFor="task-description">Mô tả</Label>
           <textarea
             id="task-description"
             name="description"
@@ -145,10 +146,10 @@ export function TaskForm({
         </div>
         {!task && (
           <div className="space-y-2">
-            <Label htmlFor="task-assignee">Assignee</Label>
+            <Label htmlFor="task-assignee">Người thực hiện</Label>
             {employee ? (
               <>
-                <p className="text-sm">You — {options[0]?.name}</p>
+                <p className="text-sm">Bạn — {options[0]?.name}</p>
                 <input
                   type="hidden"
                   name="assignedToId"
@@ -164,11 +165,11 @@ export function TaskForm({
                 defaultValue=""
               >
                 <option value="" disabled>
-                  Choose an active user
+                  Chọn nhân viên đang hoạt động
                 </option>
                 {options.map((value) => (
                   <option key={value.id} value={value.id}>
-                    {value.name} ({value.role})
+                    {value.name} ({roleDisplay[value.role] ?? value.role})
                   </option>
                 ))}
               </select>
@@ -177,7 +178,7 @@ export function TaskForm({
         )}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="task-brand">Brand</Label>
+            <Label htmlFor="task-brand">Thương hiệu</Label>
             {!employee && (
               <Button
                 type="button"
@@ -203,7 +204,7 @@ export function TaskForm({
             className={control}
           >
             <option value="" disabled>
-              Chọn brand
+              Chọn thương hiệu
             </option>
             {brandList.map((value) => (
               <option key={value.id} value={value.id}>
@@ -214,7 +215,7 @@ export function TaskForm({
         </div>
         <div className="grid gap-5 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="assigned-date">Assigned date</Label>
+            <Label htmlFor="assigned-date">Ngày giao việc</Label>
             <Input
               id="assigned-date"
               name="assignedDate"
@@ -225,7 +226,7 @@ export function TaskForm({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="due-date">Due date (optional)</Label>
+            <Label htmlFor="due-date">Hạn hoàn thành (không bắt buộc)</Label>
             <Input
               id="due-date"
               name="dueDate"
@@ -236,7 +237,7 @@ export function TaskForm({
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="task-priority">Priority</Label>
+          <Label htmlFor="task-priority">Độ ưu tiên</Label>
           <select
             id="task-priority"
             name="priority"
@@ -244,12 +245,14 @@ export function TaskForm({
             className={control}
           >
             {priorities.map((value) => (
-              <option key={value}>{value}</option>
+              <option key={value} value={value}>
+                {taskPriorityDisplay[value] ?? value}
+              </option>
             ))}
           </select>
         </div>
         <p className="text-sm text-muted-foreground">
-          Dates follow Asia/Ho_Chi_Minh.
+          Ngày được tính theo múi giờ Asia/Ho_Chi_Minh.
         </p>
         {error && (
           <p role="alert" className="text-sm text-destructive">
@@ -257,7 +260,7 @@ export function TaskForm({
           </p>
         )}
         <Button disabled={busy} className="min-h-11 w-full sm:w-auto">
-          {busy ? "Saving…" : task ? "Save task" : "Create task"}
+          {busy ? "Đang lưu…" : task ? "Lưu công việc" : "Tạo công việc"}
         </Button>
       </form>
 

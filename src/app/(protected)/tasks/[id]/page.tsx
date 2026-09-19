@@ -8,6 +8,11 @@ import { ProgressSection } from "@/components/progress/progress-section";
 import { getProgress } from "@/lib/progress/server";
 import { AssetSection } from "@/components/assets/asset-section";
 import { getAssets } from "@/lib/assets/server";
+import {
+  taskStatusDisplay,
+  taskPriorityDisplay,
+  formatDisplayDate,
+} from "@/lib/ui-labels";
 
 export default async function TaskPage({
   params,
@@ -31,37 +36,46 @@ export default async function TaskPage({
   return (
     <>
       <Link href="/tasks" className="text-sm underline">
-        Back to tasks
+        Quay lại danh sách công việc
       </Link>
       <article className="space-y-6 rounded-xl border bg-card p-5 sm:p-8">
         <div>
           <p className="mb-3 text-sm">
-            {task.status} · {task.priority}
+            {taskStatusDisplay[task.status] ?? task.status} ·{" "}
+            {taskPriorityDisplay[task.priority] ?? task.priority}
           </p>
           <h1 className="break-words text-3xl font-semibold">{task.title}</h1>
           {task.createdById === task.assignedToId && (
             <p className="mt-2 text-sm text-muted-foreground">
-              Self-created task
+              Công việc tự tạo
             </p>
           )}
         </div>
         <p className="whitespace-pre-wrap break-words text-muted-foreground">
-          {task.description || "No description."}
+          {task.description || "Không có mô tả."}
         </p>
         <dl className="grid gap-5 sm:grid-cols-2">
           <Field
-            label="Brand"
+            label="Thương hiệu"
             value={task.brandName ?? "Chưa chỉ định brand"}
           />
-          <Field label="Assignee" value={task.assignee.name} />
-          <Field label="Creator" value={task.creator.name} />
-          <Field label="Assigned date" value={task.assignedDate} />
-          <Field label="Due date" value={task.dueDate ?? "No due date"} />
+          <Field label="Người thực hiện" value={task.assignee.name} />
+          <Field label="Người tạo" value={task.creator.name} />
+          <Field
+            label="Ngày giao việc"
+            value={formatDisplayDate(task.assignedDate)}
+          />
+          <Field
+            label="Hạn hoàn thành"
+            value={
+              task.dueDate ? formatDisplayDate(task.dueDate) : "Không có hạn"
+            }
+          />
         </dl>
         {task.cancelledAt && (
           <p className="text-sm text-muted-foreground">
-            Cancelled{" "}
-            {new Intl.DateTimeFormat("en-GB", {
+            Đã hủy lúc{" "}
+            {new Intl.DateTimeFormat("vi-VN", {
               dateStyle: "medium",
               timeStyle: "short",
               timeZone: "Asia/Ho_Chi_Minh",

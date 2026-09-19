@@ -1,6 +1,13 @@
 import type { ProgressView } from "@/lib/progress/model";
 import { ProgressActions } from "./progress-actions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatDisplayDate } from "@/lib/ui-labels";
+
+const progressStatusDisplay: Record<string, string> = {
+  COMPLETED: "Hoàn thành",
+  NOT_COMPLETED: "Chưa hoàn thành",
+  NOT_REPORTED: "Chưa báo cáo",
+};
 
 export function ProgressSection({
   taskId,
@@ -10,11 +17,12 @@ export function ProgressSection({
   view: ProgressView;
 }) {
   return (
-    <Card aria-label="Daily Progress">
+    <Card aria-label="Tiến độ hàng ngày">
       <CardHeader>
-        <CardTitle>Daily Progress</CardTitle>
+        <CardTitle>Tiến độ hàng ngày</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Today: {view.today.reportDate} · {view.today.status}
+          Hôm nay: {formatDisplayDate(view.today.reportDate)} ·{" "}
+          {progressStatusDisplay[view.today.status] ?? view.today.status}
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -24,14 +32,15 @@ export function ProgressSection({
         {view.canSubmit && <ProgressActions taskId={taskId} />}
         {view.history.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No progress history yet.
+            Chưa có lịch sử tiến độ nào.
           </p>
         ) : (
-          <ol aria-label="Progress history" className="space-y-4">
+          <ol aria-label="Lịch sử tiến độ" className="space-y-4">
             {view.history.map((report) => (
               <li key={report.id} className="space-y-2 rounded-lg border p-4">
                 <p className="text-sm font-semibold">
-                  {report.reportDate} · {report.status}
+                  {formatDisplayDate(report.reportDate)} ·{" "}
+                  {progressStatusDisplay[report.status] ?? report.status}
                 </p>
                 {report.reason && (
                   <p className="whitespace-pre-wrap break-words text-sm">
@@ -41,8 +50,8 @@ export function ProgressSection({
                 {report.isCorrected && (
                   <div className="space-y-1 text-sm text-muted-foreground">
                     <p>
-                      Administratively corrected ·{" "}
-                      {new Intl.DateTimeFormat("en-GB", {
+                      Điều chỉnh bởi quản trị ·{" "}
+                      {new Intl.DateTimeFormat("vi-VN", {
                         dateStyle: "medium",
                         timeStyle: "short",
                         timeZone: "Asia/Ho_Chi_Minh",
@@ -59,10 +68,10 @@ export function ProgressSection({
         )}
         {view.canCorrect && (
           <div className="space-y-3 border-t pt-5">
-            <h2 className="text-sm font-semibold">HEAD administration</h2>
+            <h2 className="text-sm font-semibold">Quản trị tiến độ (HEAD)</h2>
             <p className="text-sm text-muted-foreground">
-              Only the latest report may change status. Historical dates and
-              reporting ownership remain unchanged.
+              Chỉ báo cáo mới nhất mới có thể thay đổi trạng thái. Ngày báo cáo
+              và quyền sở hữu ban đầu được giữ nguyên.
             </p>
             <ProgressActions
               key={`${view.history[0].id}:${view.history[0].status}:${view.history[0].correctedAt ?? "original"}`}

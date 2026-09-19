@@ -55,13 +55,13 @@ export function ProgressActions({
       );
       if (!response.ok) {
         const body: { error?: string } = await response.json();
-        setError(body.error ?? "Unable to save report.");
+        setError(body.error ?? "Không thể lưu báo cáo.");
         return;
       }
       setOpen(false);
       router.refresh();
     } catch {
-      setError("Unable to save report. Please retry.");
+      setError("Không thể lưu báo cáo. Vui lòng thử lại.");
     } finally {
       setBusy(false);
     }
@@ -87,16 +87,18 @@ export function ProgressActions({
       <DialogContent className="max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {correction ? "Sửa báo cáo hành chính" : "Daily Progress"}
+            {correction ? "Sửa báo cáo hành chính" : "Báo cáo tiến độ"}
           </DialogTitle>
           <DialogDescription>
             {correction
-              ? "HEAD correction changes the latest report and Task lifecycle. An administrative reason is required."
-              : "One official report per task and business date (Asia/Ho_Chi_Minh). Reports cannot be edited after submission."}
+              ? "Điều chỉnh của HEAD sẽ thay đổi báo cáo mới nhất và trạng thái công việc. Cần cung cấp lý do điều chỉnh hành chính."
+              : "Mỗi công việc chỉ có một báo cáo chính thức mỗi ngày làm việc (Asia/Ho_Chi_Minh). Báo cáo không thể chỉnh sửa sau khi gửi."}
           </DialogDescription>
         </DialogHeader>
         <form
-          aria-label={correction ? "Correct progress" : "Submit progress"}
+          aria-label={
+            correction ? "Sửa báo cáo hành chính" : "Gửi báo cáo tiến độ"
+          }
           onSubmit={submit}
           className="space-y-5"
         >
@@ -104,7 +106,7 @@ export function ProgressActions({
             <Label
               htmlFor={correction ? "correction-status" : "progress-status"}
             >
-              Report status
+              Trạng thái báo cáo
             </Label>
             <select
               id={correction ? "correction-status" : "progress-status"}
@@ -125,7 +127,7 @@ export function ProgressActions({
           </div>
           {status === "NOT_COMPLETED" && (
             <div className="space-y-2">
-              <Label htmlFor="incomplete-reason">Incomplete reason</Label>
+              <Label htmlFor="incomplete-reason">Lý do chưa hoàn thành</Label>
               <textarea
                 id="incomplete-reason"
                 name="reason"
@@ -138,7 +140,7 @@ export function ProgressActions({
           )}
           {correction && (
             <div className="space-y-2">
-              <Label htmlFor="correction-reason">Correction reason</Label>
+              <Label htmlFor="correction-reason">Lý do điều chỉnh</Label>
               <textarea
                 id="correction-reason"
                 name="correctionReason"
@@ -155,7 +157,7 @@ export function ProgressActions({
             </p>
           )}
           <Button type="submit" disabled={busy} className="min-h-11 w-full">
-            {busy ? "Saving…" : correction ? "Save correction" : "Gửi báo cáo"}
+            {busy ? "Đang lưu…" : correction ? "Lưu điều chỉnh" : "Gửi báo cáo"}
           </Button>
         </form>
       </DialogContent>

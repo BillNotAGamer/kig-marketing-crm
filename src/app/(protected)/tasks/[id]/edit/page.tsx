@@ -18,9 +18,9 @@ export default async function EditTaskPage({
   return (
     <>
       <Link href={`/tasks/${task.id}`} className="text-sm underline">
-        Back to task
+        Quay lại chi tiết công việc
       </Link>
-      <h1 className="text-3xl font-semibold">Edit task</h1>
+      <h1 className="text-3xl font-semibold">Chỉnh sửa công việc</h1>
       <TaskForm
         task={task}
         options={[]}

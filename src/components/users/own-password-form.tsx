@@ -23,26 +23,26 @@ export function OwnPasswordForm() {
       form.reset();
       if (!result.ok) {
         setError(
-          "Password change failed. Check your current password and use 12–128 characters for the new one.",
+          "Đổi mật khẩu thất bại. Vui lòng kiểm tra lại mật khẩu hiện tại và nhập mật khẩu mới từ 12–128 ký tự.",
         );
         return;
       }
       router.replace("/login");
       router.refresh();
     } catch {
-      setError("Unable to change password. Try again.");
+      setError("Không thể đổi mật khẩu. Vui lòng thử lại.");
     } finally {
       setBusy(false);
     }
   }
   return (
     <form
-      aria-label="Change own password"
+      aria-label="Đổi mật khẩu"
       onSubmit={submit}
       className="max-w-md space-y-5"
     >
       <div className="space-y-2">
-        <Label htmlFor="current-password">Current password</Label>
+        <Label htmlFor="current-password">Mật khẩu hiện tại</Label>
         <Input
           id="current-password"
           name="currentPassword"
@@ -53,7 +53,7 @@ export function OwnPasswordForm() {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="new-password">New password</Label>
+        <Label htmlFor="new-password">Mật khẩu mới</Label>
         <Input
           id="new-password"
           name="newPassword"
@@ -65,7 +65,8 @@ export function OwnPasswordForm() {
         />
       </div>
       <p className="text-sm text-muted-foreground">
-        Use 12–128 characters. All sessions will end after a successful change.
+        Mật khẩu gồm 12–128 ký tự. Tất cả các phiên đăng nhập sẽ kết thúc sau
+        khi đổi mật khẩu thành công.
       </p>
       {error && (
         <p role="alert" className="text-destructive">
@@ -73,7 +74,7 @@ export function OwnPasswordForm() {
         </p>
       )}
       <Button className="min-h-11" disabled={busy}>
-        {busy ? "Saving…" : "Change password"}
+        {busy ? "Đang lưu…" : "Đổi mật khẩu"}
       </Button>
     </form>
   );

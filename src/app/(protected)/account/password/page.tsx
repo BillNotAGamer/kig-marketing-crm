@@ -5,7 +5,7 @@ export default async function OwnPasswordPage() {
   await requireRole("HEAD");
   return (
     <section className="space-y-6">
-      <h1 className="text-3xl font-semibold">Change own password</h1>
+      <h1 className="text-3xl font-semibold">Đổi mật khẩu</h1>
       <OwnPasswordForm />
     </section>
   );

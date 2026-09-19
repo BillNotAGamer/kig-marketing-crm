@@ -14,9 +14,9 @@ export default async function CreateTaskPage() {
   return (
     <>
       <Link href="/tasks" className="text-sm underline">
-        Back to tasks
+        Quay lại danh sách công việc
       </Link>
-      <h1 className="text-3xl font-semibold">Create task</h1>
+      <h1 className="text-3xl font-semibold">Tạo công việc</h1>
       <TaskForm
         options={options}
         brands={brands}

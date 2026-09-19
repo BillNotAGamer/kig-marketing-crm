@@ -13,10 +13,10 @@ export default async function UsersPage() {
   return (
     <>
       <div>
-        <h1 className="text-3xl font-semibold">User Management</h1>
+        <h1 className="text-3xl font-semibold">Quản lý người dùng</h1>
         <p className="mt-2 text-muted-foreground">
-          Manage identities, access and credentials through separate
-          administrative actions.
+          Quản lý thông tin, quyền truy cập và thông tin đăng nhập của người
+          dùng.
         </p>
       </div>
       <UserManagement users={users} actorId={actor.id} />

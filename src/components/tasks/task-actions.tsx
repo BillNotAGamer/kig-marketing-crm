@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import type { AssigneeOption, TaskDTO } from "@/lib/tasks/types";
+import { roleDisplay } from "@/lib/ui-labels";
 
 export function TaskActions({
   task,
@@ -30,15 +31,15 @@ export function TaskActions({
       });
       const data = await result.json();
       if (!result.ok) {
-        setError(data.error || "Operation failed.");
+        setError(data.error || "Thao tác thất bại.");
         return;
       }
       setConfirm(null);
-      setMessage("Task saved.");
+      setMessage("Đã lưu công việc.");
       if (command === "soft-delete") router.replace("/tasks");
       router.refresh();
     } catch {
-      setError("Unable to save. Please retry.");
+      setError("Không thể lưu. Vui lòng thử lại.");
     } finally {
       setBusy(false);
     }
@@ -52,21 +53,21 @@ export function TaskActions({
   }
   return (
     <section
-      aria-label="Task administration"
+      aria-label="Quản trị công việc"
       className="space-y-5 rounded-xl border bg-card p-5"
     >
-      <h2 className="text-lg font-semibold">Manage task</h2>
+      <h2 className="text-lg font-semibold">Quản trị công việc</h2>
       {task.status === "OPEN" && (
         <>
           <Button variant="outline" asChild className="min-h-11">
-            <Link href={`/tasks/${task.id}/edit`}>Edit task</Link>
+            <Link href={`/tasks/${task.id}/edit`}>Chỉnh sửa công việc</Link>
           </Button>
           <form
-            aria-label="Reassign task"
+            aria-label="Chuyển giao công việc"
             onSubmit={reassign}
             className="max-w-md space-y-3"
           >
-            <Label htmlFor="new-assignee">New assignee</Label>
+            <Label htmlFor="new-assignee">Người thực hiện mới</Label>
             <select
               id="new-assignee"
               name="assignedToId"
@@ -75,18 +76,18 @@ export function TaskActions({
               className="min-h-11 w-full rounded-md border bg-background px-3 text-base sm:text-sm"
             >
               <option value="" disabled>
-                Choose an active user
+                Chọn nhân viên đang hoạt động
               </option>
               {options
                 .filter((value) => value.id !== task.assignedToId)
                 .map((value) => (
                   <option key={value.id} value={value.id}>
-                    {value.name} ({value.role})
+                    {value.name} ({roleDisplay[value.role] ?? value.role})
                   </option>
                 ))}
             </select>
             <Button variant="outline" disabled={busy} className="min-h-11">
-              Reassign task
+              Chuyển giao công việc
             </Button>
           </form>
           <Button
@@ -95,7 +96,7 @@ export function TaskActions({
             onClick={() => setConfirm("cancel")}
             className="min-h-11"
           >
-            Cancel task
+            Hủy công việc
           </Button>
         </>
       )}
@@ -106,19 +107,19 @@ export function TaskActions({
           onClick={() => setConfirm("soft-delete")}
           className="min-h-11"
         >
-          Delete task
+          Xóa công việc
         </Button>
       </div>
       {confirm && (
         <div
           role="group"
-          aria-label="Confirm task action"
+          aria-label="Xác nhận thao tác"
           className="space-y-3 rounded-lg border p-4"
         >
           <p className="text-sm">
             {confirm === "cancel"
-              ? "Cancel this requirement? The task stays in history."
-              : "Remove this task from working views? Its history will be retained."}
+              ? "Hủy yêu cầu công việc này? Công việc vẫn được lưu trong lịch sử."
+              : "Xóa công việc này khỏi danh sách làm việc? Lịch sử công việc vẫn được lưu giữ."}
           </p>
           <div className="flex flex-wrap gap-3">
             <Button
@@ -126,9 +127,7 @@ export function TaskActions({
               onClick={() => void send(confirm, {})}
               className="min-h-11"
             >
-              {confirm === "cancel"
-                ? "Confirm cancellation"
-                : "Confirm deletion"}
+              {confirm === "cancel" ? "Xác nhận hủy" : "Xác nhận xóa"}
             </Button>
             <Button
               variant="outline"
@@ -136,7 +135,7 @@ export function TaskActions({
               onClick={() => setConfirm(null)}
               className="min-h-11"
             >
-              Keep task
+              Giữ lại công việc
             </Button>
           </div>
         </div>
