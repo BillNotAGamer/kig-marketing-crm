@@ -1,9 +1,9 @@
 import postgres from "postgres";
 import { inspectDatabase } from "../src/db/inspect";
-import { requireDevelopmentDatabase, safeDatabaseError } from "./database-env";
+import { requireVerifyDatabase, safeDatabaseError } from "./database-env";
 
 async function main() {
-  const url = requireDevelopmentDatabase();
+  const url = requireVerifyDatabase();
   const client = postgres(url, { max: 1, connect_timeout: 10, prepare: false });
   try {
     const result = await inspectDatabase(client);

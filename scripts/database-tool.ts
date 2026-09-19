@@ -2,16 +2,23 @@ import { spawnSync } from "node:child_process";
 import { dirname, join, resolve } from "node:path";
 import { createRequire } from "node:module";
 import postgres from "postgres";
-import { requireDevelopmentDatabase, safeDatabaseError } from "./database-env";
+import {
+  requireDevelopmentDatabase,
+  requireMigrateDatabase,
+  safeDatabaseError,
+} from "./database-env";
 
 async function main() {
   const command = process.argv[2];
   if (!["bootstrap", "migrate", "studio"].includes(command ?? ""))
     throw new Error("Expected bootstrap, migrate or studio.");
-  const url = requireDevelopmentDatabase();
+  const url =
+    command === "migrate"
+      ? requireMigrateDatabase()
+      : requireDevelopmentDatabase();
   const client = postgres(url, { max: 1, connect_timeout: 10, prepare: false });
   try {
-    // Read-only preflight. Initial migration is restricted to an empty public schema.
+    // Read-only preflight.
     const tables = await client<
       { table_name: string }[]
     >`SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'`;
@@ -26,6 +33,27 @@ async function main() {
       throw new Error(
         "Bootstrap requires an empty development schema and no migration journal. Nothing was mutated.",
       );
+    }
+    if (
+      command === "migrate" &&
+      process.env.KIG_DATABASE_ENV === "production"
+    ) {
+      if (!journal[0]?.journal) {
+        throw new Error(
+          "Production migration requires an existing Drizzle migration journal.",
+        );
+      }
+      const tableNames = new Set(tables.map((t) => t.table_name));
+      if (!tableNames.has("task") || !tableNames.has("user")) {
+        throw new Error(
+          "Production migration requires existing task and user tables.",
+        );
+      }
+      if (tableNames.has("brand")) {
+        throw new Error(
+          "Production migration preflight detected existing brand table; migration aborted.",
+        );
+      }
     }
   } finally {
     await client.end();
@@ -50,7 +78,7 @@ async function main() {
     );
   console.log(
     command === "bootstrap" || command === "migrate"
-      ? "Development migrations applied. Run npm run db:verify next."
+      ? "Migrations applied. Run npm run db:verify next."
       : "Drizzle Studio session ended.",
   );
 }
@@ -61,6 +89,7 @@ main().catch((error: unknown) => {
       error.message.startsWith("An authorized") ||
       error.message.startsWith("Database identity") ||
       error.message.startsWith("Bootstrap") ||
+      error.message.startsWith("Production migration") ||
       error.message.startsWith("Drizzle command") ||
       error.message.startsWith("Expected"));
   console.error(expected ? error.message : safeDatabaseError(error));

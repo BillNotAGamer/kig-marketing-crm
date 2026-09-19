@@ -10,6 +10,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { user } from "./auth";
+import { brand } from "./brands";
 import { taskPriority, taskStatus } from "./enums";
 
 export const task = pgTable(
@@ -40,6 +41,9 @@ export const task = pgTable(
     deletedById: uuid("deleted_by_id").references(() => user.id, {
       onDelete: "restrict",
     }),
+    brandId: uuid("brand_id").references(() => brand.id, {
+      onDelete: "restrict",
+    }),
   },
   (table) => [
     check("task_title_nonempty", sql`length(trim(${table.title})) > 0`),
@@ -68,6 +72,9 @@ export const task = pgTable(
       .on(table.dueDate)
       .where(sql`${table.deletedAt} IS NULL`),
     index("task_creator_idx").on(table.createdById),
+    index("task_brand_idx")
+      .on(table.brandId)
+      .where(sql`${table.deletedAt} IS NULL`),
   ],
 );
 export type Task = typeof task.$inferSelect;

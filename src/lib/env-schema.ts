@@ -42,7 +42,9 @@ export const serverEnvSchema = z
         message: "Drive credentials must be complete.",
       });
     if (value.KIG_DATABASE_ENV === "production") {
-      if (new URL(value.BETTER_AUTH_URL).protocol !== "https:")
+      const url = new URL(value.BETTER_AUTH_URL);
+      const isLoopback = ["localhost", "127.0.0.1"].includes(url.hostname);
+      if (url.protocol !== "https:" && !isLoopback)
         context.addIssue({
           code: "custom",
           path: ["BETTER_AUTH_URL"],

@@ -13,6 +13,8 @@ export type TaskDTO = {
   status: "OPEN" | "COMPLETED" | "CANCELLED";
   assignedDate: string;
   dueDate: string | null;
+  brandId: string | null;
+  brandName: string | null;
   createdById: string;
   assignedToId: string;
   creator: { id: string; name: string };

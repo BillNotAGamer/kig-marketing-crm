@@ -11,7 +11,7 @@ it("verifies PostgreSQL catalogs and constraints with rolled-back fixtures", asy
   });
   const rollback = new Error("rollback test fixtures");
   try {
-    expect((await inspectDatabase(client)).applicationTables).toBe(5);
+    expect((await inspectDatabase(client)).applicationTables).toBe(6);
     await expect(
       client.begin(async (tx) => {
         const userId = randomUUID();

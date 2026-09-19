@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import { user } from "./auth";
+import { brand } from "./brands";
 import { task } from "./tasks";
 import { taskDailyUpdate } from "./task-daily-updates";
 import { taskAsset } from "./task-assets";
@@ -8,6 +9,7 @@ import { auditLog } from "./audit-logs";
 
 // Adds distinct application relations; generated auth session/account relations remain intact.
 export const userApplicationRelations = relations(user, ({ many }) => ({
+  createdBrands: many(brand, { relationName: "brandCreator" }),
   createdTasks: many(task, { relationName: "taskCreator" }),
   assignedTasks: many(task, { relationName: "taskAssignee" }),
   deletedTasks: many(task, { relationName: "taskDeleter" }),
@@ -20,7 +22,19 @@ export const userApplicationRelations = relations(user, ({ many }) => ({
   notifications: many(notification, { relationName: "notificationRecipient" }),
   auditLogs: many(auditLog, { relationName: "auditActor" }),
 }));
+export const brandRelations = relations(brand, ({ one, many }) => ({
+  createdBy: one(user, {
+    fields: [brand.createdById],
+    references: [user.id],
+    relationName: "brandCreator",
+  }),
+  tasks: many(task),
+}));
 export const taskRelations = relations(task, ({ one, many }) => ({
+  brand: one(brand, {
+    fields: [task.brandId],
+    references: [brand.id],
+  }),
   createdBy: one(user, {
     fields: [task.createdById],
     references: [user.id],

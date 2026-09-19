@@ -22,6 +22,58 @@ export function requireDevelopmentDatabase(): string {
   return result.data;
 }
 
+export function requireBootstrapDatabase(): string {
+  loadEnvConfig(process.cwd());
+  const env = process.env.KIG_DATABASE_ENV;
+  if (env === "production") {
+    if (process.env.KIG_ALLOW_PRODUCTION_HEAD_BOOTSTRAP !== "true") {
+      throw new Error(
+        "Production HEAD bootstrap requires explicit one-time KIG_ALLOW_PRODUCTION_HEAD_BOOTSTRAP=true opt-in.",
+      );
+    }
+    const result = serverEnvSchema.shape.DATABASE_URL.safeParse(
+      process.env.DATABASE_URL,
+    );
+    if (!result.success)
+      throw new Error("A valid production DATABASE_URL is required.");
+    return result.data;
+  }
+  return requireDevelopmentDatabase();
+}
+
+export function requireMigrateDatabase(): string {
+  loadEnvConfig(process.cwd());
+  const env = process.env.KIG_DATABASE_ENV;
+  if (env === "production") {
+    if (process.env.KIG_ALLOW_PRODUCTION_MIGRATION !== "true") {
+      throw new Error(
+        "Production migration requires explicit one-time KIG_ALLOW_PRODUCTION_MIGRATION=true opt-in.",
+      );
+    }
+    const result = serverEnvSchema.shape.DATABASE_URL.safeParse(
+      process.env.DATABASE_URL,
+    );
+    if (!result.success)
+      throw new Error("A valid production DATABASE_URL is required.");
+    return result.data;
+  }
+  return requireDevelopmentDatabase();
+}
+
+export function requireVerifyDatabase(): string {
+  loadEnvConfig(process.cwd());
+  const env = process.env.KIG_DATABASE_ENV;
+  if (env === "production") {
+    const result = serverEnvSchema.shape.DATABASE_URL.safeParse(
+      process.env.DATABASE_URL,
+    );
+    if (!result.success)
+      throw new Error("A valid production DATABASE_URL is required.");
+    return result.data;
+  }
+  return requireDevelopmentDatabase();
+}
+
 export function safeDatabaseError(error: unknown): string {
   // Driver error messages/stacks can contain connection data. Do not echo them.
   const code =

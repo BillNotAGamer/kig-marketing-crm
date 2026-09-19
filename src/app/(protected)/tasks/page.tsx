@@ -45,6 +45,12 @@ export default async function TasksPage() {
               </p>
             </CardHeader>
             <CardContent className="space-y-2">
+              <p className="text-sm">
+                <span className="text-xs text-muted-foreground">Brand: </span>
+                <span className="font-medium">
+                  {task.brandName ?? "Chưa chỉ định brand"}
+                </span>
+              </p>
               <p className="break-words text-sm">
                 Assigned to {task.assignee.name}
               </p>

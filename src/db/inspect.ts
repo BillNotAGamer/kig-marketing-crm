@@ -6,6 +6,7 @@ export const databaseTables: AnyPgTable[] = [
   schema.session,
   schema.account,
   schema.verification,
+  schema.brand,
   schema.task,
   schema.taskDailyUpdate,
   schema.taskAsset,
@@ -126,7 +127,7 @@ export async function inspectDatabase(client: import("postgres").Sql) {
   }
   return {
     tables: databaseTables.length,
-    applicationTables: 5,
+    applicationTables: 6,
     enums: applicationEnums.length,
   };
 }

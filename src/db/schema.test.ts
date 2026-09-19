@@ -15,12 +15,13 @@ function checkSql(table: Parameters<typeof getTableConfig>[0], name: string) {
 }
 
 describe("PostgreSQL V1.1 persistence metadata and generated SQL (offline)", () => {
-  it("has exactly nine UUID tables, five application tables and six approved enums", () => {
+  it("has exactly ten UUID tables, six application tables and six approved enums", () => {
     expect(
       databaseTables.map((table) => getTableConfig(table).name).sort(),
     ).toEqual([
       "account",
       "audit_log",
+      "brand",
       "notification",
       "session",
       "task",
@@ -75,9 +76,9 @@ describe("PostgreSQL V1.1 persistence metadata and generated SQL (offline)", () 
           expect(column.getSQLType()).toBe("timestamp with time zone");
       }
   });
-  it("uses RESTRICT for all 13 foreign keys and leaves audit actor nullable", () => {
+  it("uses RESTRICT for all 15 foreign keys and leaves audit actor nullable", () => {
     const keys = databaseTables.flatMap((t) => getTableConfig(t).foreignKeys);
-    expect(keys).toHaveLength(13);
+    expect(keys).toHaveLength(15);
     for (const key of keys) {
       expect(key.onDelete).toBe("restrict");
       for (const column of key.reference().columns)
@@ -165,13 +166,13 @@ describe("PostgreSQL V1.1 persistence metadata and generated SQL (offline)", () 
       '"task_asset"."deleted_at" IS NULL',
     );
   });
-  it("has all 14 CHECKs and 14 approved indexes, including six active partial indexes", () => {
+  it("has all 15 CHECKs and 16 approved indexes, including seven active partial indexes", () => {
     const configs = databaseTables.map(getTableConfig);
-    expect(configs.flatMap((c) => c.checks)).toHaveLength(14);
-    expect(configs.flatMap((c) => c.indexes)).toHaveLength(14);
+    expect(configs.flatMap((c) => c.checks)).toHaveLength(15);
+    expect(configs.flatMap((c) => c.indexes)).toHaveLength(16);
     expect(
       configs.flatMap((c) => c.indexes).filter((i) => i.config.where),
-    ).toHaveLength(6);
+    ).toHaveLength(7);
     for (const table of [schema.notification, schema.auditLog])
       for (const check of getTableConfig(table).checks)
         expect(dialect.sqlToQuery(check.value).sql).toContain("length(trim(");
@@ -210,10 +211,12 @@ describe("PostgreSQL V1.1 persistence metadata and generated SQL (offline)", () 
         .toSQL().sql,
     ).toContain('"task"');
   });
-  it("has one clean initial migration with matching DDL and no destructive operations/cascades", () => {
-    expect(readdirSync("drizzle").filter((f) => f.endsWith(".sql"))).toEqual([
-      "0000_initial_v1_1.sql",
-    ]);
+  it("has approved migrations with matching DDL and no destructive operations/cascades", () => {
+    expect(
+      readdirSync("drizzle")
+        .filter((f) => f.endsWith(".sql"))
+        .sort(),
+    ).toEqual(["0000_initial_v1_1.sql", "0001_add_task_brand.sql"]);
     expect(migration.match(/CREATE TABLE /g)).toHaveLength(9);
     expect(migration.match(/CREATE TYPE /g)).toHaveLength(6);
     expect(migration.match(/FOREIGN KEY /g)).toHaveLength(13);
@@ -226,5 +229,16 @@ describe("PostgreSQL V1.1 persistence metadata and generated SQL (offline)", () 
     );
     expect(migration).not.toMatch(/postgres(?:ql)?:\/\//i);
     expect(migration).not.toMatch(/"[a-z_]+" timestamp(?:,| NOT| DEFAULT)/);
+
+    const brandMigration = readFileSync(
+      "drizzle/0001_add_task_brand.sql",
+      "utf8",
+    );
+    expect(brandMigration.match(/CREATE TABLE /g)).toHaveLength(1);
+    expect(brandMigration).not.toMatch(/CREATE TYPE /g);
+    expect(brandMigration.match(/FOREIGN KEY /g)).toHaveLength(2);
+    expect(brandMigration).not.toMatch(
+      /\b(?:DROP|TRUNCATE|DELETE FROM|CASCADE)\b/i,
+    );
   });
 });

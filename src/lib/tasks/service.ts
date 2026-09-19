@@ -1,6 +1,6 @@
 import { and, desc, eq, isNull, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import { task, user, auditLog, notification } from "../../db/schema";
+import { task, user, auditLog, notification, brand } from "../../db/schema";
 import type { Task } from "../../db/schema/tasks";
 import {
   createAuth,
@@ -37,6 +37,8 @@ const projection = {
   status: task.status,
   assignedDate: task.assignedDate,
   dueDate: task.dueDate,
+  brandId: task.brandId,
+  brandName: brand.name,
   createdById: task.createdById,
   assignedToId: task.assignedToId,
   creator: { id: creator.id, name: creator.name },
@@ -52,6 +54,7 @@ function queryTasks(tx: Transaction, actor: Actor, id?: string) {
     .from(task)
     .innerJoin(creator, eq(task.createdById, creator.id))
     .innerJoin(assignee, eq(task.assignedToId, assignee.id))
+    .leftJoin(brand, eq(task.brandId, brand.id))
     .where(
       and(
         isNull(task.deletedAt),
@@ -66,6 +69,8 @@ type JoinedTask = Awaited<ReturnType<typeof queryTasks>>[number];
 function dto(row: JoinedTask): TaskDTO {
   return {
     ...row,
+    brandId: row.brandId ?? null,
+    brandName: row.brandName ?? null,
     completedAt: row.completedAt?.toISOString() ?? null,
     cancelledAt: row.cancelledAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
@@ -85,6 +90,7 @@ function snapshot(row: Task) {
     priority: row.priority,
     assignedDate: row.assignedDate,
     dueDate: row.dueDate,
+    brandId: row.brandId ?? null,
     createdById: row.createdById,
     assignedToId: row.assignedToId,
     status: row.status,
@@ -241,6 +247,11 @@ export function taskService(db: AuthDatabase, env: ServerEnv) {
             : "task:create-for-others",
         );
         await assignmentTarget(tx, actor, values.assignedToId);
+        const [brandExists] = await tx
+          .select({ id: brand.id })
+          .from(brand)
+          .where(eq(brand.id, values.brandId));
+        if (!brandExists) throw new AccessError(400, "Brand not found.");
         const [row] = await tx
           .insert(task)
           .values({
@@ -269,6 +280,11 @@ export function taskService(db: AuthDatabase, env: ServerEnv) {
         "task:update",
         true,
         async (tx) => {
+          const [brandExists] = await tx
+            .select({ id: brand.id })
+            .from(brand)
+            .where(eq(brand.id, values.brandId));
+          if (!brandExists) throw new AccessError(400, "Brand not found.");
           const [row] = await tx
             .update(task)
             .set({ ...values, updatedAt: new Date() })

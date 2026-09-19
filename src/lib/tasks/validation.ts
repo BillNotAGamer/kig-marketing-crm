@@ -15,6 +15,7 @@ const metadataShape = {
   assignedDate: businessDateSchema,
   dueDate: businessDateSchema.nullable(),
   priority: z.enum(priorities),
+  brandId: z.uuid(),
 };
 function orderedDates(value: { assignedDate: string; dueDate: string | null }) {
   return value.dueDate === null || value.dueDate >= value.assignedDate;

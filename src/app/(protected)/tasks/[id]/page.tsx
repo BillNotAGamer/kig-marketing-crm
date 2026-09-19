@@ -49,6 +49,10 @@ export default async function TaskPage({
           {task.description || "No description."}
         </p>
         <dl className="grid gap-5 sm:grid-cols-2">
+          <Field
+            label="Brand"
+            value={task.brandName ?? "Chưa chỉ định brand"}
+          />
           <Field label="Assignee" value={task.assignee.name} />
           <Field label="Creator" value={task.creator.name} />
           <Field label="Assigned date" value={task.assignedDate} />

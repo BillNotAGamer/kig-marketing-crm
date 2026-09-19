@@ -74,12 +74,14 @@ for (const role of appRoleValues) {
     },
   );
 }
+const brandId = randomUUID();
 const metadata = {
   title: "Task",
   description: null,
   priority: "NORMAL",
   assignedDate: "2026-09-18",
   dueDate: null,
+  brandId,
 };
 it.each([
   "0000-09-18",
@@ -126,8 +128,38 @@ it("metadata cannot change the assignee; commands cannot accept lifecycle patche
       title: "Minimal task",
       assignedDate: "2026-09-18",
       assignedToId: id,
+      brandId,
     }),
-  ).toMatchObject({ description: null, dueDate: null, priority: "NORMAL" });
+  ).toMatchObject({
+    description: null,
+    dueDate: null,
+    priority: "NORMAL",
+    brandId,
+  });
+});
+it("requires valid brandId UUID for task creation and metadata update", () => {
+  const noBrand = {
+    title: metadata.title,
+    description: metadata.description,
+    priority: metadata.priority,
+    assignedDate: metadata.assignedDate,
+    dueDate: metadata.dueDate,
+  };
+  expect(
+    createTaskSchema.safeParse({ ...noBrand, assignedToId: id }).success,
+  ).toBe(false);
+  expect(taskMetadataSchema.safeParse(noBrand).success).toBe(false);
+  expect(
+    createTaskSchema.safeParse({
+      ...metadata,
+      assignedToId: id,
+      brandId: "invalid-uuid",
+    }).success,
+  ).toBe(false);
+  expect(
+    taskMetadataSchema.safeParse({ ...metadata, brandId: "invalid-uuid" })
+      .success,
+  ).toBe(false);
 });
 it.each([
   "2026-02-29",

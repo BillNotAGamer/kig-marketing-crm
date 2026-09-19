@@ -1,5 +1,6 @@
 export * from "./auth";
 export * from "./enums";
+export * from "./brands";
 export * from "./tasks";
 export * from "./task-daily-updates";
 export * from "./task-assets";
