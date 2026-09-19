@@ -1,20 +1,78 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
-import Home from "@/app/page";
-import { ThemeProvider } from "@/components/theme-provider";
+import { describe, expect, it, vi, beforeEach } from "vitest";
+import HomePage from "@/app/page";
+import LoginPage from "@/app/login/page";
+import { getCurrentSession } from "@/lib/auth/session";
+import type { Actor } from "@/lib/auth/session-core";
 
-describe("project foundation", () => {
-  it("renders the project identity and three appearance choices", () => {
-    render(
-      <ThemeProvider attribute="class" enableSystem={false}>
-        <Home />
-      </ThemeProvider>,
-    );
-    expect(
-      screen.getByRole("heading", { name: "KIG Marketing CRM" }),
-    ).toBeInTheDocument();
-    for (const name of ["Light", "Dark", "System"]) {
-      expect(screen.getByRole("button", { name })).toBeInTheDocument();
-    }
+vi.mock("server-only", () => ({}));
+
+const redirectMock = vi.fn((url: string) => {
+  throw new Error(`REDIRECT:${url}`);
+});
+
+vi.mock("next/navigation", () => ({
+  redirect: (url: string) => redirectMock(url),
+  useRouter: () => ({
+    replace: vi.fn(),
+    refresh: vi.fn(),
+  }),
+}));
+
+vi.mock("@/lib/auth/session", () => ({
+  getCurrentSession: vi.fn(),
+}));
+
+const mockActor: Actor = {
+  id: "mock-user-id",
+  name: "Admin User",
+  email: "admin@kigholding.vn",
+  role: "HEAD",
+};
+
+describe("application entry and login routing", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe("GET / (HomePage)", () => {
+    it("redirects unauthenticated visitor to /login", async () => {
+      vi.mocked(getCurrentSession).mockResolvedValueOnce(null);
+
+      await expect(HomePage()).rejects.toThrow("REDIRECT:/login");
+      expect(redirectMock).toHaveBeenCalledWith("/login");
+    });
+
+    it("redirects authenticated user to /dashboard", async () => {
+      vi.mocked(getCurrentSession).mockResolvedValueOnce(mockActor);
+
+      await expect(HomePage()).rejects.toThrow("REDIRECT:/dashboard");
+      expect(redirectMock).toHaveBeenCalledWith("/dashboard");
+    });
+  });
+
+  describe("GET /login (LoginPage)", () => {
+    it("redirects already authenticated user to /dashboard", async () => {
+      vi.mocked(getCurrentSession).mockResolvedValueOnce(mockActor);
+
+      await expect(LoginPage()).rejects.toThrow("REDIRECT:/dashboard");
+      expect(redirectMock).toHaveBeenCalledWith("/dashboard");
+    });
+
+    it("renders the login page for unauthenticated visitor", async () => {
+      vi.mocked(getCurrentSession).mockResolvedValueOnce(null);
+
+      const ui = await LoginPage();
+      render(ui);
+
+      expect(
+        screen.getByRole("heading", { name: "KIG Marketing CRM" }),
+      ).toBeInTheDocument();
+      expect(screen.getByText("Welcome back")).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Sign in" }),
+      ).toBeInTheDocument();
+      expect(redirectMock).not.toHaveBeenCalled();
+    });
   });
 });

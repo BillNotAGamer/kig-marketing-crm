@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 
 export default async function LoginPage() {
-  if (await getCurrentSession()) redirect("/app");
+  if (await getCurrentSession()) redirect("/dashboard");
   return (
     <main className="flex min-h-svh items-center justify-center p-4 sm:p-8">
       <div className="w-full max-w-md space-y-6">

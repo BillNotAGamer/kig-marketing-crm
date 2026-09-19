@@ -12,7 +12,7 @@ export const loginSchema = z
   .object({
     email: emailSchema,
     password: z.string().min(1).max(128),
-    callbackURL: z.literal("/app").optional(),
+    callbackURL: z.enum(["/app", "/dashboard"]).optional(),
   })
   .strict();
 export const createUserSchema = z

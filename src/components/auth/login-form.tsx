@@ -37,7 +37,7 @@ export function LoginForm() {
         return;
       }
       form.reset();
-      router.replace("/app");
+      router.replace("/dashboard");
       router.refresh();
     } catch {
       setError("Unable to sign in. Please try again.");
