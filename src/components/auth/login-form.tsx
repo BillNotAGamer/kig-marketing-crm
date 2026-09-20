@@ -31,7 +31,9 @@ export function LoginForm() {
         body: JSON.stringify(parsed.data),
       });
       if (!response.ok) {
-        setError("Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin hoặc liên hệ với Admin.");
+        setError(
+          "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin hoặc liên hệ với Admin.",
+        );
         form.querySelector<HTMLInputElement>('input[name="password"]')!.value =
           "";
         return;
@@ -46,7 +48,7 @@ export function LoginForm() {
     }
   }
   return (
-    <form onSubmit={submit} className="space-y-5" aria-label="Login">
+    <form onSubmit={submit} className="space-y-5" aria-label="Đăng nhập">
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
         <Input
@@ -80,7 +82,7 @@ export function LoginForm() {
         {loading ? "Đang đăng nhập…" : "Đăng nhập"}
       </Button>
       <p className="text-sm text-muted-foreground">
-        Tài khoản và mật khẩu được quản lý bởi Admin.
+        Tài khoản và mật khẩu được quản lý bởi Trưởng bộ phận.
       </p>
     </form>
   );

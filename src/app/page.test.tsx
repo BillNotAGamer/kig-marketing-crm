@@ -68,9 +68,20 @@ describe("application entry and login routing", () => {
       expect(
         screen.getByRole("heading", { name: "KIG Marketing CRM" }),
       ).toBeInTheDocument();
-      expect(screen.getByText("Welcome back")).toBeInTheDocument();
       expect(
-        screen.getByRole("button", { name: "Sign in" }),
+        screen.getByText("Hệ thống quản lý công việc Marketing"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("img", { name: "KIG Holding" }),
+      ).toBeInTheDocument();
+      expect(screen.getByText("Chào mừng bạn quay lại")).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Đăng nhập" }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          "Tài khoản và mật khẩu được quản lý bởi Trưởng bộ phận.",
+        ),
       ).toBeInTheDocument();
       expect(redirectMock).not.toHaveBeenCalled();
     });

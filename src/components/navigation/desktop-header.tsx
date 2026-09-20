@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { KigLogo } from "@/components/ui/kig-logo";
 import { getPageTitle } from "./nav-utils";
 
 interface DesktopHeaderProps {
@@ -19,9 +20,13 @@ export function DesktopHeader({ unreadCount }: DesktopHeaderProps) {
       <div className="flex items-center gap-2 lg:hidden">
         <Link
           href="/app"
-          className="text-base font-bold tracking-tight text-foreground"
+          className="flex items-center gap-2.5 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          aria-label="KIG Marketing CRM"
         >
-          KIG Marketing CRM
+          <KigLogo width={96} height={69} className="h-7 w-auto" />
+          <span className="text-sm font-bold tracking-tight text-foreground">
+            Marketing CRM
+          </span>
         </Link>
       </div>
 

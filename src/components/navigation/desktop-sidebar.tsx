@@ -17,6 +17,7 @@ import type { Actor } from "@/lib/auth/session-core";
 import { isRouteActive } from "./nav-utils";
 import { ThemeControls } from "@/components/theme-controls";
 import { LogoutButton } from "@/components/auth/logout-button";
+import { KigLogo } from "@/components/ui/kig-logo";
 import { cn } from "cn";
 
 interface DesktopSidebarProps {
@@ -52,16 +53,15 @@ export function DesktopSidebar({ actor }: DesktopSidebarProps) {
       className="hidden lg:flex lg:w-64 lg:flex-col lg:shrink-0 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto border-r bg-card text-card-foreground"
     >
       {/* Sidebar Branding */}
-      <div className="flex h-16 shrink-0 items-center border-b px-6">
+      <div className="flex shrink-0 flex-col items-center justify-center border-b px-6 py-5">
         <Link
           href="/app"
-          className="group flex flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+          className="group flex flex-col items-center gap-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          aria-label="KIG Marketing CRM"
         >
-          <span className="text-base font-bold tracking-tight text-foreground transition-colors group-hover:text-primary">
-            KIG Marketing CRM
-          </span>
-          <span className="text-[11px] font-medium text-muted-foreground">
-            Marketing Workspace
+          <KigLogo width={150} height={108} priority className="w-[145px]" />
+          <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase transition-colors group-hover:text-primary">
+            Marketing CRM
           </span>
         </Link>
       </div>

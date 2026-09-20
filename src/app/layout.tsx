@@ -13,6 +13,10 @@ const quicksand = Quicksand({
 export const metadata: Metadata = {
   title: "KIG Marketing CRM",
   description: "Internal Marketing task-management CRM for KIG Holding.",
+  icons: {
+    icon: "/images/kig-no-bg-logo.svg",
+    shortcut: "/images/kig-no-bg-logo.svg",
+  },
 };
 
 export default function RootLayout({

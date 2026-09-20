@@ -98,8 +98,10 @@ describe("DesktopSidebar Component", () => {
 
   it("renders branding without development foundation or debug text", () => {
     render(<DesktopSidebar actor={headActor} />);
-    expect(screen.getByText("KIG Marketing CRM")).toBeInTheDocument();
-    expect(screen.getByText("Marketing Workspace")).toBeInTheDocument();
+    expect(
+      screen.getByRole("img", { name: "KIG Holding" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Marketing CRM")).toBeInTheDocument();
     expect(screen.queryByText(/foundation/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Phase 0/i)).not.toBeInTheDocument();
   });
