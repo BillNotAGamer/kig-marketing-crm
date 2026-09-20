@@ -12,6 +12,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import type { DashboardDto } from "@/lib/dashboard/model";
+import { roleDisplay } from "@/lib/ui-labels";
 
 interface DashboardViewProps {
   data: DashboardDto;
@@ -195,7 +196,7 @@ export function DashboardView({ data }: DashboardViewProps) {
                           )}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {emp.role}
+                          {roleDisplay[emp.role] ?? emp.role}
                         </div>
                       </td>
                       <td className="px-3 py-3 text-center font-semibold">

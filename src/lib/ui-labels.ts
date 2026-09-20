@@ -12,16 +12,20 @@ export const taskPriorityDisplay: Record<string, string> = {
 };
 
 export const roleDisplay: Record<string, string> = {
-  HEAD: "Trưởng bộ phận",
-  DEPUTY: "Phó bộ phận",
-  EMPLOYEE: "Nhân viên",
+  HEAD: "Trưởng phòng (HEAD)",
+  DEPUTY: "Phó phòng (DEPUTY)",
+  EMPLOYEE: "Nhân viên (EMPLOYEE)",
 };
 
 export const roleSelectDisplay: Record<string, string> = {
-  HEAD: "Trưởng bộ phận (HEAD)",
-  DEPUTY: "Phó bộ phận (DEPUTY)",
+  HEAD: "Trưởng phòng (HEAD)",
+  DEPUTY: "Phó phòng (DEPUTY)",
   EMPLOYEE: "Nhân viên (EMPLOYEE)",
 };
+
+export function getRoleLabel(role: string): string {
+  return roleDisplay[role] ?? role;
+}
 
 export function formatDisplayDate(
   val: string | Date | null | undefined,

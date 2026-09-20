@@ -82,7 +82,7 @@ export function TaskActions({
                 .filter((value) => value.id !== task.assignedToId)
                 .map((value) => (
                   <option key={value.id} value={value.id}>
-                    {value.name} ({roleDisplay[value.role] ?? value.role})
+                    {value.name} · {roleDisplay[value.role] ?? value.role}
                   </option>
                 ))}
             </select>

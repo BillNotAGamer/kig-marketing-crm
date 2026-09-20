@@ -85,9 +85,62 @@ describe("DashboardView Component Polish", () => {
     render(<DashboardView data={emptyDashboardData} />);
 
     expect(screen.getByText("Nguyễn Văn Employee")).toBeInTheDocument();
-    expect(screen.getByText("EMPLOYEE")).toBeInTheDocument();
+    expect(screen.getByText("Nhân viên (EMPLOYEE)")).toBeInTheDocument();
     expect(
       screen.queryByText(/hidden-employee@kigholding\.vn/),
     ).not.toBeInTheDocument();
+  });
+
+  it("renders localized Vietnamese presentation labels for all employee roles in breakdown table", () => {
+    const multiRoleData: DashboardDto = {
+      ...emptyDashboardData,
+      employeeBreakdown: [
+        {
+          userId: "user-head",
+          name: "Trưởng Phòng Test",
+          email: "head@kigholding.vn",
+          role: "HEAD",
+          banned: false,
+          total: 1,
+          completed: 1,
+          notCompleted: 0,
+          notReported: 0,
+          completionRate: 100,
+          overdueCount: 0,
+        },
+        {
+          userId: "user-deputy",
+          name: "Phó Phòng Test",
+          email: "deputy@kigholding.vn",
+          role: "DEPUTY",
+          banned: false,
+          total: 2,
+          completed: 1,
+          notCompleted: 1,
+          notReported: 0,
+          completionRate: 50,
+          overdueCount: 0,
+        },
+        {
+          userId: "user-employee",
+          name: "Nhân Viên Test",
+          email: "employee@kigholding.vn",
+          role: "EMPLOYEE",
+          banned: false,
+          total: 3,
+          completed: 2,
+          notCompleted: 1,
+          notReported: 0,
+          completionRate: 67,
+          overdueCount: 0,
+        },
+      ],
+    };
+
+    render(<DashboardView data={multiRoleData} />);
+
+    expect(screen.getByText("Trưởng phòng (HEAD)")).toBeInTheDocument();
+    expect(screen.getByText("Phó phòng (DEPUTY)")).toBeInTheDocument();
+    expect(screen.getByText("Nhân viên (EMPLOYEE)")).toBeInTheDocument();
   });
 });

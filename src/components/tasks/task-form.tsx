@@ -169,7 +169,7 @@ export function TaskForm({
                 </option>
                 {options.map((value) => (
                   <option key={value.id} value={value.id}>
-                    {value.name} ({roleDisplay[value.role] ?? value.role})
+                    {value.name} · {roleDisplay[value.role] ?? value.role}
                   </option>
                 ))}
               </select>

@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { addDays } from "@/lib/calendar/date";
 import type { ReportsDto } from "@/lib/reports/model";
+import { roleDisplay } from "@/lib/ui-labels";
 
 interface ReportsViewProps {
   data: ReportsDto;
@@ -287,7 +288,7 @@ export function ReportsView({ data }: ReportsViewProps) {
                           )}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {emp.role} · {emp.email}
+                          {roleDisplay[emp.role] ?? emp.role} · {emp.email}
                         </div>
                       </td>
                       <td className="px-3 py-3 text-center font-semibold">

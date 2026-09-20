@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { requireSession } from "@/lib/auth/session";
 import { getNotifications } from "@/lib/notifications/server";
+import { roleDisplay } from "@/lib/ui-labels";
 import { NotificationsView } from "@/components/notifications/notifications-view";
 
 export default async function NotificationsPage(props: {
@@ -21,7 +22,8 @@ export default async function NotificationsPage(props: {
           Trung tâm thông báo
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Thông báo cá nhân của {actor.name} ({actor.role})
+          Thông báo cá nhân của {actor.name} ·{" "}
+          {roleDisplay[actor.role] ?? actor.role}
         </p>
       </div>
 

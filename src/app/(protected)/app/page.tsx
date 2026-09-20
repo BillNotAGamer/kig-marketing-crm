@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { requireSession } from "@/lib/auth/session";
 import { getCalendar } from "@/lib/calendar/server";
 import { formatVietnameseDate } from "@/lib/calendar/date";
+import { roleDisplay } from "@/lib/ui-labels";
 import { TodayView } from "@/components/calendar/today-view";
 import { Button } from "@/components/ui/button";
 import { Calendar, Plus } from "lucide-react";
@@ -22,8 +23,8 @@ export default async function ApplicationHome() {
             Hôm nay
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {formatVietnameseDate(businessToday)} · Xin chào, {actor.name} (
-            {actor.role})
+            {formatVietnameseDate(businessToday)} · Xin chào, {actor.name} ·{" "}
+            {roleDisplay[actor.role] ?? actor.role}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

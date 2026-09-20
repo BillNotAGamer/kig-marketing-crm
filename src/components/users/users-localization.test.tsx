@@ -3,6 +3,8 @@ import { describe, expect, it, vi } from "vitest";
 import { UserManagement } from "./user-management";
 import {
   roleDisplay,
+  roleSelectDisplay,
+  getRoleLabel,
   taskStatusDisplay,
   taskPriorityDisplay,
   formatDisplayDate,
@@ -37,9 +39,17 @@ const mockUsers = [
 
 describe("UI Labels and Date Formatting Helpers", () => {
   it("translates canonical roles, task statuses, and priorities", () => {
-    expect(roleDisplay["HEAD"]).toBe("Trưởng bộ phận");
-    expect(roleDisplay["DEPUTY"]).toBe("Phó bộ phận");
-    expect(roleDisplay["EMPLOYEE"]).toBe("Nhân viên");
+    expect(roleDisplay["HEAD"]).toBe("Trưởng phòng (HEAD)");
+    expect(roleDisplay["DEPUTY"]).toBe("Phó phòng (DEPUTY)");
+    expect(roleDisplay["EMPLOYEE"]).toBe("Nhân viên (EMPLOYEE)");
+
+    expect(roleSelectDisplay["HEAD"]).toBe("Trưởng phòng (HEAD)");
+    expect(roleSelectDisplay["DEPUTY"]).toBe("Phó phòng (DEPUTY)");
+    expect(roleSelectDisplay["EMPLOYEE"]).toBe("Nhân viên (EMPLOYEE)");
+
+    expect(getRoleLabel("HEAD")).toBe("Trưởng phòng (HEAD)");
+    expect(getRoleLabel("DEPUTY")).toBe("Phó phòng (DEPUTY)");
+    expect(getRoleLabel("EMPLOYEE")).toBe("Nhân viên (EMPLOYEE)");
 
     expect(taskStatusDisplay["OPEN"]).toBe("Đang mở");
     expect(taskStatusDisplay["COMPLETED"]).toBe("Hoàn thành");
@@ -89,12 +99,12 @@ describe("UserManagement Component Vietnamese Localization", () => {
 
     // Active user (HEAD)
     expect(
-      screen.getByText(/Trưởng bộ phận · Đang hoạt động/),
+      screen.getByText(/Trưởng phòng \(HEAD\) · Đang hoạt động/),
     ).toBeInTheDocument();
 
     // Inactive user (DEPUTY, banned: true)
     expect(
-      screen.getByText(/Phó bộ phận · Ngừng hoạt động/),
+      screen.getByText(/Phó phòng \(DEPUTY\) · Ngừng hoạt động/),
     ).toBeInTheDocument();
 
     // Action buttons

@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { requireSession } from "@/lib/auth/session";
 import { getDashboard } from "@/lib/dashboard/server";
 import { formatVietnameseDate } from "@/lib/calendar/date";
+import { roleDisplay } from "@/lib/ui-labels";
 import { DashboardView } from "@/components/dashboard/dashboard-view";
 
 export default async function DashboardPage() {
@@ -17,8 +18,8 @@ export default async function DashboardPage() {
           {data.isTeamView ? "Tổng quan hoạt động nhóm" : "Tổng quan cá nhân"}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {formatVietnameseDate(data.businessToday)} · {actor.name} (
-          {actor.role})
+          {formatVietnameseDate(data.businessToday)} · {actor.name} ·{" "}
+          {roleDisplay[actor.role] ?? actor.role}
         </p>
       </div>
 

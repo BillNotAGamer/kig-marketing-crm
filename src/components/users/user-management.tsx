@@ -82,7 +82,7 @@ export function UserManagement({
               <Label htmlFor="create-role">Vai trò</Label>
               <select id="create-role" name="role" className={selectClass}>
                 <option value="EMPLOYEE">Nhân viên (EMPLOYEE)</option>
-                <option value="DEPUTY">Phó bộ phận (DEPUTY)</option>
+                <option value="DEPUTY">Phó phòng (DEPUTY)</option>
               </select>
             </div>
             <Field
@@ -159,8 +159,8 @@ export function UserManagement({
                   defaultValue={value.role}
                   className={selectClass}
                 >
-                  <option value="HEAD">Trưởng bộ phận (HEAD)</option>
-                  <option value="DEPUTY">Phó bộ phận (DEPUTY)</option>
+                  <option value="HEAD">Trưởng phòng (HEAD)</option>
+                  <option value="DEPUTY">Phó phòng (DEPUTY)</option>
                   <option value="EMPLOYEE">Nhân viên (EMPLOYEE)</option>
                 </select>
                 <Button variant="outline" className="min-h-11" disabled={busy}>

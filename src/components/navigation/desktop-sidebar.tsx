@@ -19,6 +19,7 @@ import { ThemeControls } from "@/components/theme-controls";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { KigLogo } from "@/components/ui/kig-logo";
 import { cn } from "cn";
+import { roleDisplay } from "@/lib/ui-labels";
 
 interface DesktopSidebarProps {
   actor: Actor;
@@ -154,7 +155,10 @@ export function DesktopSidebar({ actor }: DesktopSidebarProps) {
           >
             {actor.name}
           </span>
-          <span className="shrink-0 rounded bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+          <span
+            className="shrink-0 rounded bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary"
+            title={roleDisplay[actor.role] ?? actor.role}
+          >
             {actor.role}
           </span>
         </div>
