@@ -74,6 +74,32 @@ export function requireVerifyDatabase(): string {
   return requireDevelopmentDatabase();
 }
 
+export function requireAdminPromotionDatabase(options?: {
+  allowReadOnlyCheck?: boolean;
+}): string {
+  loadEnvConfig(process.cwd());
+  const env = process.env.KIG_DATABASE_ENV;
+  if (env !== "production") {
+    throw new Error(
+      "Admin promotion command requires explicit KIG_DATABASE_ENV=production authorization.",
+    );
+  }
+  if (
+    !options?.allowReadOnlyCheck &&
+    process.env.KIG_ALLOW_PRODUCTION_ADMIN_PROMOTION !== "true"
+  ) {
+    throw new Error(
+      "Production admin promotion requires explicit one-time KIG_ALLOW_PRODUCTION_ADMIN_PROMOTION=true opt-in.",
+    );
+  }
+  const result = serverEnvSchema.shape.DATABASE_URL.safeParse(
+    process.env.DATABASE_URL,
+  );
+  if (!result.success)
+    throw new Error("A valid production DATABASE_URL is required.");
+  return result.data;
+}
+
 export function safeDatabaseError(error: unknown): string {
   // Driver error messages/stacks can contain connection data. Do not echo them.
   const code =

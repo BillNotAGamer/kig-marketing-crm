@@ -3,7 +3,7 @@ import { user, auditLog } from "../../db/schema";
 import type { ServerEnv } from "../env-schema";
 import { createAuth, type AuthDatabase } from "../auth/factory";
 import { nameSchema, emailSchema, passwordSchema } from "../auth/validation";
-import { administrationLock } from "./service";
+import { administrationLock } from "./locks";
 import { z } from "zod";
 
 export const bootstrapSchema = z

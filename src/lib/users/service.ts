@@ -1,4 +1,4 @@
-import { and, eq, sql, desc } from "drizzle-orm";
+import { and, eq, desc } from "drizzle-orm";
 import { user, session, auditLog, account } from "../../db/schema";
 import type { ServerEnv } from "../env-schema";
 import {
@@ -24,8 +24,8 @@ import {
   canEnableUser,
   canResetPassword,
 } from "./policy";
-
-export const administrationLock = sql`SELECT pg_advisory_xact_lock(24091802)`;
+export { administrationLock, ADMINISTRATION_ADVISORY_LOCK_ID } from "./locks";
+import { administrationLock } from "./locks";
 export function userSummary(value: typeof user.$inferSelect) {
   return {
     id: value.id,
