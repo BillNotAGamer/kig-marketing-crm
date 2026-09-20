@@ -18,7 +18,7 @@ export function createAuth(db: AuthDatabase, env: ServerEnv) {
     ...authOptions,
     emailAndPassword: {
       ...authOptions.emailAndPassword,
-      minPasswordLength: 12,
+      minPasswordLength: 6,
       maxPasswordLength: 128,
     },
     database: drizzleAdapter(db, { provider: "pg", schema, transaction: true }),

@@ -9,6 +9,8 @@ import {
   passwordSchema,
 } from "./validation";
 
+import { bootstrapSchema } from "../users/bootstrap";
+
 describe("Phase 2 role and command validation", () => {
   it.each(userPermissions)("grants %s only to HEAD", (permission) => {
     expect(hasPermission("HEAD", permission)).toBe(true);
@@ -20,7 +22,7 @@ describe("Phase 2 role and command validation", () => {
       name: "Fixture",
       email: " FIXTURE@EXAMPLE.INVALID ",
       role: "EMPLOYEE",
-      password: "x".repeat(12),
+      password: "x".repeat(6),
     };
     expect(createUserSchema.parse(input).email).toBe("fixture@example.invalid");
     expect(createUserSchema.safeParse({ ...input, role: "HEAD" }).success).toBe(
@@ -49,12 +51,71 @@ describe("Phase 2 role and command validation", () => {
       false,
     );
   });
-  it("enforces explicit length policy and fixed login routing", () => {
-    for (const value of ["x".repeat(11), "x".repeat(129), " ".repeat(12)])
-      expect(passwordSchema.safeParse(value).success).toBe(false);
+  it("enforces explicit 6–128 length policy and fixed login routing", () => {
+    // Exact boundary tests for passwordSchema
+    expect(passwordSchema.safeParse("x".repeat(5)).success).toBe(false);
+    expect(passwordSchema.safeParse("x".repeat(6)).success).toBe(true);
+    expect(passwordSchema.safeParse("x".repeat(7)).success).toBe(true);
+    expect(passwordSchema.safeParse("x".repeat(128)).success).toBe(true);
+    expect(passwordSchema.safeParse("x".repeat(129)).success).toBe(false);
+
+    // Whitespace only is rejected
+    expect(passwordSchema.safeParse(" ".repeat(6)).success).toBe(false);
+    expect(passwordSchema.safeParse(" \t\n ").success).toBe(false);
+
+    // Leading and trailing spaces are preserved without trimming
+    const untrimmed = "  pass67  ";
+    expect(passwordSchema.safeParse(untrimmed).success).toBe(true);
+    expect(passwordSchema.parse(untrimmed)).toBe(untrimmed);
+
+    // Own password schema checks
     expect(
-      ownPasswordSchema.safeParse({ newPassword: "x".repeat(12) }).success,
+      ownPasswordSchema.safeParse({ newPassword: "x".repeat(6) }).success,
+    ).toBe(false); // missing currentPassword
+    expect(
+      ownPasswordSchema.safeParse({
+        currentPassword: "old-password",
+        newPassword: "x".repeat(5),
+      }).success,
     ).toBe(false);
+    expect(
+      ownPasswordSchema.safeParse({
+        currentPassword: "old-password",
+        newPassword: "x".repeat(6),
+      }).success,
+    ).toBe(true);
+
+    // Reset password command checks
+    expect(
+      userCommandSchema.safeParse({
+        operation: "reset-password",
+        password: "x".repeat(5),
+      }).success,
+    ).toBe(false);
+    expect(
+      userCommandSchema.safeParse({
+        operation: "reset-password",
+        password: "x".repeat(6),
+      }).success,
+    ).toBe(true);
+
+    // Bootstrap HEAD schema checks
+    expect(
+      bootstrapSchema.safeParse({
+        name: "Head Admin",
+        email: "head@kigholding.vn",
+        password: "x".repeat(5),
+      }).success,
+    ).toBe(false);
+    expect(
+      bootstrapSchema.safeParse({
+        name: "Head Admin",
+        email: "head@kigholding.vn",
+        password: "x".repeat(6),
+      }).success,
+    ).toBe(true);
+
+    // Login schema remains permissive (min 1, max 128) with callback URL protection
     expect(
       loginSchema.safeParse({
         email: "fixture@example.invalid",

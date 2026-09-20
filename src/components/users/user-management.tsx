@@ -92,8 +92,7 @@ export function UserManagement({
               type="password"
             />
             <p className="text-sm text-muted-foreground sm:col-span-2">
-              Mật khẩu gồm 12–128 ký tự. Hãy sử dụng mật khẩu mạnh và riêng
-              biệt.
+              Mật khẩu gồm 6–128 ký tự. Hãy sử dụng mật khẩu mạnh và riêng biệt.
             </p>
             <Button className="min-h-11" disabled={busy}>
               Tạo người dùng
@@ -235,7 +234,7 @@ function Field({
         type={type}
         defaultValue={defaultValue}
         required
-        minLength={type === "password" ? 12 : 1}
+        minLength={type === "password" ? 6 : 1}
         maxLength={type === "password" ? 128 : name === "name" ? 100 : 254}
         autoComplete={type === "password" ? "new-password" : "off"}
         className="min-h-11"

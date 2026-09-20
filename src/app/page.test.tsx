@@ -66,7 +66,7 @@ describe("application entry and login routing", () => {
       render(ui);
 
       expect(
-        screen.getByRole("heading", { name: "KIG Marketing CRM" }),
+        screen.getByRole("heading", { name: /KIG (Holding )?Marketing CRM/ }),
       ).toBeInTheDocument();
       expect(
         screen.getByText("Hệ thống quản lý công việc Marketing"),

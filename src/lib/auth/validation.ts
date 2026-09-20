@@ -3,9 +3,12 @@ import { appRoleValues } from "./roles";
 
 export const passwordSchema = z
   .string()
-  .min(12, "Use at least 12 characters.")
-  .max(128, "Use at most 128 characters.")
-  .refine((value) => value.trim().length > 0, "Password cannot be blank.");
+  .min(6, "Mật khẩu phải có từ 6 đến 128 ký tự.")
+  .max(128, "Mật khẩu phải có từ 6 đến 128 ký tự.")
+  .refine(
+    (value) => value.trim().length > 0,
+    "Mật khẩu không được chỉ chứa khoảng trắng.",
+  );
 export const emailSchema = z.string().trim().toLowerCase().email().max(254);
 export const nameSchema = z.string().trim().min(1).max(100);
 export const loginSchema = z

@@ -2,6 +2,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { authOptions } from "./options";
+import { createAuth } from "./factory";
 import { authRoles, headUserActions } from "./roles";
 import { user, session, account, verification } from "@/db/schema/auth";
 import { getTableConfig } from "drizzle-orm/pg-core";
@@ -30,6 +31,17 @@ describe("Better Auth persistence configuration", () => {
     expect(options.adminRoles).toEqual(["HEAD"]);
     expect(options).not.toHaveProperty("adminUserIds");
     expect(Object.keys(authRoles)).toEqual(["HEAD", "DEPUTY", "EMPLOYEE"]);
+  });
+  it("configures Better Auth with minPasswordLength: 6 and maxPasswordLength: 128", () => {
+    const auth = createAuth(
+      {} as never,
+      {
+        BETTER_AUTH_SECRET: "a".repeat(32),
+        BETTER_AUTH_URL: "http://localhost:3000",
+      } as never,
+    );
+    expect(auth.options.emailAndPassword?.minPasswordLength).toBe(6);
+    expect(auth.options.emailAndPassword?.maxPasswordLength).toBe(128);
   });
   it("HEAD has only eight enumerated user actions; forbidden user/session actions are denied", () => {
     for (const action of headUserActions)

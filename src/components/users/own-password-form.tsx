@@ -23,7 +23,7 @@ export function OwnPasswordForm() {
       form.reset();
       if (!result.ok) {
         setError(
-          "Đổi mật khẩu thất bại. Vui lòng kiểm tra lại mật khẩu hiện tại và nhập mật khẩu mới từ 12–128 ký tự.",
+          "Đổi mật khẩu thất bại. Vui lòng kiểm tra lại mật khẩu hiện tại và nhập mật khẩu mới từ 6–128 ký tự.",
         );
         return;
       }
@@ -59,14 +59,14 @@ export function OwnPasswordForm() {
           name="newPassword"
           type="password"
           autoComplete="new-password"
-          minLength={12}
+          minLength={6}
           maxLength={128}
           required
         />
       </div>
       <p className="text-sm text-muted-foreground">
-        Mật khẩu gồm 12–128 ký tự. Tất cả các phiên đăng nhập sẽ kết thúc sau
-        khi đổi mật khẩu thành công.
+        Mật khẩu gồm 6–128 ký tự. Tất cả các phiên đăng nhập sẽ kết thúc sau khi
+        đổi mật khẩu thành công.
       </p>
       {error && (
         <p role="alert" className="text-destructive">

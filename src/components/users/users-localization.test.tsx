@@ -72,7 +72,7 @@ describe("UserManagement Component Vietnamese Localization", () => {
     expect(screen.getByText("Mật khẩu ban đầu")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Mật khẩu gồm 12–128 ký tự. Hãy sử dụng mật khẩu mạnh và riêng biệt.",
+        "Mật khẩu gồm 6–128 ký tự. Hãy sử dụng mật khẩu mạnh và riêng biệt.",
       ),
     ).toBeInTheDocument();
     expect(
