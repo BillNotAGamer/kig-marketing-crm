@@ -49,13 +49,13 @@ export function DesktopSidebar({ actor }: DesktopSidebarProps) {
       className="hidden lg:flex lg:w-64 lg:flex-col lg:shrink-0 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto border-r bg-card text-card-foreground"
     >
       {/* Sidebar Branding */}
-      <div className="flex shrink-0 flex-col items-center justify-center border-b px-6 py-5">
+      <div className="flex shrink-0 flex-col items-center justify-center border-b px-6 py-4">
         <Link
           href="/app"
-          className="group flex flex-col items-center gap-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="group flex flex-col items-center gap-1.5 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           aria-label="KIG Marketing CRM"
         >
-          <KigLogo width={150} height={108} priority className="w-[145px]" />
+          <KigLogo width={125} height={90} priority className="w-[125px]" />
           <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase transition-colors group-hover:text-primary">
             Marketing CRM
           </span>

@@ -18,12 +18,12 @@ export default async function LoginPage() {
       <div className="w-full max-w-md space-y-6">
         <div className="flex flex-col items-center text-center">
           <KigLogo
-            width={180}
-            height={118}
+            width={150}
+            height={108}
             priority
-            className="w-[150px] sm:w-[180px]"
+            className="w-[125px] sm:w-[150px]"
           />
-          <h1 className="mt-4 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+          <h1 className="mt-3 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             KIG Holding Marketing CRM
           </h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
