@@ -44,14 +44,21 @@ async function main() {
         );
       }
       const tableNames = new Set(tables.map((t) => t.table_name));
-      if (!tableNames.has("task") || !tableNames.has("user")) {
+      if (
+        !tableNames.has("task") ||
+        !tableNames.has("user") ||
+        !tableNames.has("brand")
+      ) {
         throw new Error(
-          "Production migration requires existing task and user tables.",
+          "Production migration requires existing task, user, and brand tables.",
         );
       }
-      if (tableNames.has("brand")) {
+      const constraint = await client`
+        SELECT conname FROM pg_constraint WHERE conname = 'user_role_valid'
+      `;
+      if (constraint.length === 0) {
         throw new Error(
-          "Production migration preflight detected existing brand table; migration aborted.",
+          "Production migration requires existing user_role_valid constraint.",
         );
       }
     }

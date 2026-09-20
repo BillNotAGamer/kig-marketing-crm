@@ -9,6 +9,7 @@ import { eq } from "drizzle-orm";
 import type { Database } from "../../db/connection";
 import * as schema from "../../db/schema";
 import type { ServerEnv } from "../env-schema";
+import { appRoleValues, type AppRole } from "./roles";
 import { authOptions } from "./options";
 
 export type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
@@ -37,9 +38,13 @@ export function createAuth(db: AuthDatabase, env: ServerEnv) {
             .select()
             .from(schema.user)
             .where(eq(schema.user.id, current.user.id));
-          if (!actor || actor.banned || actor.role !== "HEAD")
+          if (
+            !actor ||
+            actor.banned ||
+            !appRoleValues.includes(actor.role as AppRole)
+          )
             throw new APIError("FORBIDDEN", {
-              message: "HEAD authorization required.",
+              message: "Active authorization required.",
             });
         }
       }),

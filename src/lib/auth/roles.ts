@@ -1,7 +1,7 @@
 import { createAccessControl } from "better-auth/plugins/access";
 import { defaultStatements } from "better-auth/plugins/admin/access";
 
-export const appRoleValues = ["HEAD", "DEPUTY", "EMPLOYEE"] as const;
+export const appRoleValues = ["ADMIN", "HEAD", "DEPUTY", "EMPLOYEE"] as const;
 export type AppRole = (typeof appRoleValues)[number];
 
 // Describe the complete upstream vocabulary, then grant only approved actions.
@@ -17,6 +17,10 @@ export const headUserActions = [
   "set-email",
 ] as const;
 export const authRoles = {
+  ADMIN: adminAccessControl.newRole({
+    user: [...headUserActions],
+    session: [],
+  }),
   HEAD: adminAccessControl.newRole({ user: [...headUserActions], session: [] }),
   DEPUTY: adminAccessControl.newRole({ user: [], session: [] }),
   EMPLOYEE: adminAccessControl.newRole({ user: [], session: [] }),

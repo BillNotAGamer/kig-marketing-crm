@@ -164,29 +164,31 @@ export function MobileBottomNav({ role }: { role?: string }) {
             </div>
           </div>
 
-          {/* Admin routes (HEAD only) */}
-          {role === "HEAD" && (
+          {/* Admin routes */}
+          {(role === "ADMIN" || role === "HEAD" || role === "DEPUTY") && (
             <div className="space-y-1.5">
               <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                 Quản trị hệ thống
               </span>
               <div className="grid grid-cols-2 gap-2">
-                <Link
-                  href="/audit"
-                  onClick={closeMore}
-                  aria-current={
-                    isRouteActive(pathname, "/audit") ? "page" : undefined
-                  }
-                  className={cn(
-                    "flex min-h-11 items-center gap-2.5 rounded-lg border p-2.5 text-xs font-medium transition-colors",
-                    isRouteActive(pathname, "/audit")
-                      ? "border-primary bg-primary/10 text-primary font-semibold"
-                      : "border-border hover:bg-muted text-foreground",
-                  )}
-                >
-                  <ScrollText className="h-4 w-4 shrink-0" />
-                  <span className="truncate">Nhật ký hệ thống</span>
-                </Link>
+                {(role === "ADMIN" || role === "HEAD") && (
+                  <Link
+                    href="/audit"
+                    onClick={closeMore}
+                    aria-current={
+                      isRouteActive(pathname, "/audit") ? "page" : undefined
+                    }
+                    className={cn(
+                      "flex min-h-11 items-center gap-2.5 rounded-lg border p-2.5 text-xs font-medium transition-colors",
+                      isRouteActive(pathname, "/audit")
+                        ? "border-primary bg-primary/10 text-primary font-semibold"
+                        : "border-border hover:bg-muted text-foreground",
+                    )}
+                  >
+                    <ScrollText className="h-4 w-4 shrink-0" />
+                    <span className="truncate">Nhật ký hệ thống</span>
+                  </Link>
+                )}
                 <Link
                   href="/users"
                   onClick={closeMore}

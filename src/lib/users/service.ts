@@ -1,5 +1,5 @@
 import { and, eq, sql, desc } from "drizzle-orm";
-import { user, session, auditLog } from "../../db/schema";
+import { user, session, auditLog, account } from "../../db/schema";
 import type { ServerEnv } from "../env-schema";
 import {
   createAuth,
@@ -7,13 +7,23 @@ import {
   type AuthDatabase,
 } from "../auth/factory";
 import { AccessError, type Permission } from "../auth/permissions";
-import { authorizedActor } from "../auth/session-core";
+import { authorizedActor, type Actor } from "../auth/session-core";
 import {
   createUserSchema,
   ownPasswordSchema,
   userCommandSchema,
   userIdSchema,
 } from "../auth/validation";
+import type { AppRole } from "../auth/roles";
+import {
+  canCreateRole,
+  canViewManagedUser,
+  canEditIdentity,
+  canAssignRole,
+  canDisableUser,
+  canEnableUser,
+  canResetPassword,
+} from "./policy";
 
 export const administrationLock = sql`SELECT pg_advisory_xact_lock(24091802)`;
 export function userSummary(value: typeof user.$inferSelect) {
@@ -57,22 +67,47 @@ async function targetUser(tx: Transaction, id: string) {
   if (!target) throw new AccessError(404, "User not found.");
   return target;
 }
-async function preserveActiveHead(
+async function preserveActiveAdminOrHead(
   tx: Transaction,
   target: typeof user.$inferSelect,
+  nextRole?: AppRole,
 ) {
-  if (target.role === "HEAD" && !target.banned) {
-    const heads = await tx
-      .select({ id: user.id })
-      .from(user)
-      .where(and(eq(user.role, "HEAD"), eq(user.banned, false)));
-    if (heads.length <= 1)
-      throw new AccessError(
-        409,
-        "The final ACTIVE HEAD cannot be disabled or demoted.",
-      );
+  if (target.banned) return;
+
+  const activeAdmins = await tx
+    .select({ id: user.id })
+    .from(user)
+    .where(and(eq(user.role, "ADMIN"), eq(user.banned, false)));
+
+  if (activeAdmins.length === 0) {
+    // STATE A: active ADMIN count === 0.
+    // Preserve at least one ACTIVE HEAD.
+    if (target.role === "HEAD" && nextRole !== "HEAD") {
+      const activeHeads = await tx
+        .select({ id: user.id })
+        .from(user)
+        .where(and(eq(user.role, "HEAD"), eq(user.banned, false)));
+      if (activeHeads.length <= 1) {
+        throw new AccessError(
+          409,
+          "The final ACTIVE HEAD cannot be disabled or demoted.",
+        );
+      }
+    }
+  } else {
+    // STATE B: active ADMIN count >= 1.
+    // Enforce at least one ACTIVE ADMIN.
+    if (target.role === "ADMIN" && nextRole !== "ADMIN") {
+      if (activeAdmins.length <= 1) {
+        throw new AccessError(
+          409,
+          "The final ACTIVE ADMIN cannot be disabled or demoted.",
+        );
+      }
+    }
   }
 }
+
 export function userService(db: AuthDatabase, env: ServerEnv) {
   async function execute<T>(
     headers: Headers,
@@ -80,31 +115,35 @@ export function userService(db: AuthDatabase, env: ServerEnv) {
     work: (
       tx: Transaction,
       auth: ReturnType<typeof createAuth>,
-      actorId: string,
+      actor: Actor,
     ) => Promise<T>,
   ) {
     return db.transaction(async (tx) => {
       await tx.execute(administrationLock);
       const auth = createAuth(tx, env);
       const actor = await authorizedActor(tx, auth, headers, permission);
-      return work(tx, auth, actor.id);
+      return work(tx, auth, actor);
     });
   }
+
   return {
     list: (headers: Headers) =>
-      execute(headers, "user:read", async (tx) =>
-        (await tx.select().from(user).orderBy(desc(user.createdAt))).map(
-          userSummary,
-        ),
+      execute(headers, "user:read", async (tx, _auth, actor) =>
+        (await tx.select().from(user).orderBy(desc(user.createdAt)))
+          .filter((target) => canViewManagedUser(actor, target))
+          .map(userSummary),
       ),
     create: (headers: Headers, input: unknown) =>
-      execute(headers, "user:create", async (tx, auth, actorId) => {
+      execute(headers, "user:create", async (tx, auth, actor) => {
         const values = createUserSchema.parse(input);
-        const result = await auth.api.createUser({ headers, body: values });
+        if (!canCreateRole(actor.role, values.role as AppRole)) {
+          throw new AccessError(403, "Access denied.");
+        }
+        const result = await auth.api.createUser({ body: values });
         const summary = userSummary(await targetUser(tx, result.user.id));
         await writeAudit(
           tx,
-          actorId,
+          actor.id,
           "CREATE_USER",
           result.user.id,
           undefined,
@@ -125,94 +164,140 @@ export function userService(db: AuthDatabase, env: ServerEnv) {
               : command.operation === "disable"
                 ? "user:disable"
                 : "user:enable";
-      return execute(headers, permission, async (tx, auth, actorId) => {
+      return execute(headers, permission, async (tx, auth, actor) => {
         const target = await targetUser(tx, targetId);
+        if (!canViewManagedUser(actor, target)) {
+          throw new AccessError(404, "User not found.");
+        }
         const before = userSummary(target);
         let action: AuditAction;
         switch (command.operation) {
           case "update":
-            await auth.api.adminUpdateUser({
-              headers,
-              body: {
-                userId: targetId,
-                data: {
-                  name: command.name,
-                  email: command.email,
-                  ...(target.email !== command.email
-                    ? { emailVerified: false }
-                    : {}),
-                },
-              },
-            });
-            if (target.email !== command.email)
+            if (!canEditIdentity(actor, target)) {
+              throw new AccessError(403, "Access denied.");
+            }
+            await tx
+              .update(user)
+              .set({
+                name: command.name,
+                email: command.email,
+                ...(target.email !== command.email
+                  ? { emailVerified: false }
+                  : {}),
+                updatedAt: new Date(),
+              })
+              .where(eq(user.id, targetId));
+            if (target.email !== command.email) {
               await tx.delete(session).where(eq(session.userId, targetId));
+            }
             action = "UPDATE_USER";
             break;
           case "change-role":
-            if (command.role !== "HEAD") await preserveActiveHead(tx, target);
-            await auth.api.setRole({
-              headers,
-              body: { userId: targetId, role: command.role },
-            });
+            if (!canAssignRole(actor, target, command.role as AppRole)) {
+              throw new AccessError(403, "Access denied.");
+            }
+            await preserveActiveAdminOrHead(
+              tx,
+              target,
+              command.role as AppRole,
+            );
+            await tx
+              .update(user)
+              .set({
+                role: command.role,
+                updatedAt: new Date(),
+              })
+              .where(eq(user.id, targetId));
             await tx.delete(session).where(eq(session.userId, targetId));
             action = "CHANGE_ROLE";
             break;
           case "disable":
-            await preserveActiveHead(tx, target);
-            if (targetId === actorId) {
-              // Better Auth banUser forbids self-ban; the approved business rule permits it when another ACTIVE HEAD remains.
-              await tx
-                .update(user)
-                .set({
-                  banned: true,
-                  banReason: "Administrative deactivation",
-                  banExpires: null,
-                  updatedAt: new Date(),
-                })
-                .where(eq(user.id, targetId));
-              await tx.delete(session).where(eq(session.userId, targetId));
-            } else
-              await auth.api.banUser({
-                headers,
-                body: {
-                  userId: targetId,
-                  banReason: "Administrative deactivation",
-                },
-              });
+            if (!canDisableUser(actor, target)) {
+              throw new AccessError(403, "Access denied.");
+            }
+            await preserveActiveAdminOrHead(tx, target, undefined);
+            await tx
+              .update(user)
+              .set({
+                banned: true,
+                banReason: "Administrative deactivation",
+                banExpires: null,
+                updatedAt: new Date(),
+              })
+              .where(eq(user.id, targetId));
+            await tx.delete(session).where(eq(session.userId, targetId));
             action = "DISABLE_USER";
             break;
           case "enable":
-            await auth.api.unbanUser({ headers, body: { userId: targetId } });
+            if (!canEnableUser(actor, target)) {
+              throw new AccessError(403, "Access denied.");
+            }
+            await tx
+              .update(user)
+              .set({
+                banned: false,
+                banReason: null,
+                banExpires: null,
+                updatedAt: new Date(),
+              })
+              .where(eq(user.id, targetId));
             action = "ENABLE_USER";
             break;
           case "reset-password":
-            if (targetId === actorId)
+            if (targetId === actor.id) {
               throw new AccessError(
                 400,
                 "Use change own password with current-password validation.",
               );
-            await auth.api.setUserPassword({
-              headers,
-              body: { userId: targetId, newPassword: command.password },
-            });
+            }
+            if (!canResetPassword(actor, target)) {
+              throw new AccessError(403, "Access denied.");
+            }
+            const ctx = await auth.$context;
+            const hashedPassword = await ctx.password.hash(command.password);
+            const [existingAccount] = await tx
+              .select()
+              .from(account)
+              .where(
+                and(
+                  eq(account.userId, targetId),
+                  eq(account.providerId, "credential"),
+                ),
+              );
+            if (existingAccount) {
+              await tx
+                .update(account)
+                .set({
+                  password: hashedPassword,
+                  updatedAt: new Date(),
+                })
+                .where(eq(account.id, existingAccount.id));
+            } else {
+              await tx.insert(account).values({
+                userId: targetId,
+                accountId: target.id,
+                providerId: "credential",
+                password: hashedPassword,
+              });
+            }
             await tx.delete(session).where(eq(session.userId, targetId));
             action = "RESET_PASSWORD";
             break;
         }
         const after = userSummary(await targetUser(tx, targetId));
-        await writeAudit(tx, actorId, action, targetId, before, after);
+        await writeAudit(tx, actor.id, action, targetId, before, after);
         return after;
       });
     },
     changeOwnPassword: (headers: Headers, input: unknown) =>
-      execute(headers, "user:reset-password", async (tx, auth, actorId) => {
+      execute(headers, "user:change-own-password", async (tx, auth, actor) => {
         const values = ownPasswordSchema.parse(input);
         await auth.api.changePassword({
           headers,
           body: { ...values, revokeOtherSessions: false },
         });
-        await tx.delete(session).where(eq(session.userId, actorId));
-        await writeAudit(tx, actorId, "CHANGE_OWN_PASSWORD", actorId);
+        await tx.delete(session).where(eq(session.userId, actor.id));
+        await writeAudit(tx, actor.id, "CHANGE_OWN_PASSWORD", actor.id);
         return { success: true };
       }),
   };

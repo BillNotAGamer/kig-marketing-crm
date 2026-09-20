@@ -39,14 +39,17 @@ const mockUsers = [
 
 describe("UI Labels and Date Formatting Helpers", () => {
   it("translates canonical roles, task statuses, and priorities", () => {
+    expect(roleDisplay["ADMIN"]).toBe("Quản trị viên (ADMIN)");
     expect(roleDisplay["HEAD"]).toBe("Trưởng phòng (HEAD)");
     expect(roleDisplay["DEPUTY"]).toBe("Phó phòng (DEPUTY)");
     expect(roleDisplay["EMPLOYEE"]).toBe("Nhân viên (EMPLOYEE)");
 
+    expect(roleSelectDisplay["ADMIN"]).toBe("Quản trị viên (ADMIN)");
     expect(roleSelectDisplay["HEAD"]).toBe("Trưởng phòng (HEAD)");
     expect(roleSelectDisplay["DEPUTY"]).toBe("Phó phòng (DEPUTY)");
     expect(roleSelectDisplay["EMPLOYEE"]).toBe("Nhân viên (EMPLOYEE)");
 
+    expect(getRoleLabel("ADMIN")).toBe("Quản trị viên (ADMIN)");
     expect(getRoleLabel("HEAD")).toBe("Trưởng phòng (HEAD)");
     expect(getRoleLabel("DEPUTY")).toBe("Phó phòng (DEPUTY)");
     expect(getRoleLabel("EMPLOYEE")).toBe("Nhân viên (EMPLOYEE)");
@@ -95,7 +98,13 @@ describe("UserManagement Component Vietnamese Localization", () => {
   });
 
   it("renders Vietnamese role and status labels for active and inactive users", () => {
-    render(<UserManagement users={mockUsers} actorId="user-1" />);
+    render(
+      <UserManagement
+        users={mockUsers}
+        actorId="admin-operator"
+        actorRole="ADMIN"
+      />,
+    );
 
     // Active user (HEAD)
     expect(
@@ -115,8 +124,8 @@ describe("UserManagement Component Vietnamese Localization", () => {
       screen.getByRole("button", { name: "Kích hoạt người dùng" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Đặt lại mật khẩu" }),
-    ).toBeInTheDocument();
+      screen.getAllByRole("button", { name: "Đặt lại mật khẩu" }).length,
+    ).toBeGreaterThan(0);
     expect(
       screen.getAllByRole("button", { name: "Lưu thông tin" }),
     ).toHaveLength(2);

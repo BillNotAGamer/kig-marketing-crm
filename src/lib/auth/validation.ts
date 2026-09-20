@@ -22,7 +22,7 @@ export const createUserSchema = z
   .object({
     name: nameSchema,
     email: emailSchema,
-    role: z.enum(["DEPUTY", "EMPLOYEE"]),
+    role: z.enum(appRoleValues),
     password: passwordSchema,
   })
   .strict();

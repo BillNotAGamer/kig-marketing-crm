@@ -57,7 +57,7 @@ export const authOptions = {
       ac: adminAccessControl,
       roles: authRoles,
       defaultRole: "EMPLOYEE",
-      adminRoles: ["HEAD"],
+      adminRoles: ["ADMIN", "HEAD"],
     }),
     persistenceInvariants,
   ],

@@ -11,7 +11,7 @@ export default async function EditTaskPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireRole("HEAD");
+  await requireRole(["ADMIN", "HEAD"]);
   const task = await readTaskPage((await params).id);
   if (task.status !== "OPEN") notFound();
   const brands = await getBrands().listBrands(new Headers(await headers()));

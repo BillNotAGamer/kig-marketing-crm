@@ -14,6 +14,7 @@ export const taskPermissions = [
 ] as const;
 export type TaskPermission = (typeof taskPermissions)[number];
 const grants: Record<AppRole, readonly TaskPermission[]> = {
+  ADMIN: taskPermissions,
   HEAD: taskPermissions,
   DEPUTY: [
     "task:create-self",
@@ -42,7 +43,9 @@ export function canAssignTask(
     return permitsTask(actor.role, "task:create-self");
   return (
     permitsTask(actor.role, "task:create-for-others") &&
-    (actor.role === "HEAD" || target.role === "EMPLOYEE")
+    (actor.role === "ADMIN" ||
+      actor.role === "HEAD" ||
+      target.role === "EMPLOYEE")
   );
 }
 export function canReadTask(

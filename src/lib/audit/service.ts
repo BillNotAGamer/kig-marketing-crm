@@ -44,8 +44,8 @@ export function auditService(db: AuthDatabase, env: ServerEnv) {
     const query = auditLogQuerySchema.parse(rawQuery);
 
     return execute(headers, async (tx, actor) => {
-      // HEAD-only security gate
-      if (actor.role !== "HEAD") {
+      // ADMIN and HEAD security gate
+      if (actor.role !== "ADMIN" && actor.role !== "HEAD") {
         throw new ForbiddenAuditError();
       }
 

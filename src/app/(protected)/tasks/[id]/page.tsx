@@ -30,7 +30,7 @@ export default async function TaskPage({
     task.id,
   );
   const options =
-    actor.role === "HEAD" && task.status === "OPEN"
+    (actor.role === "ADMIN" || actor.role === "HEAD") && task.status === "OPEN"
       ? await getTasks().listAssignees(new Headers(await headers()))
       : [];
   return (
@@ -85,7 +85,9 @@ export default async function TaskPage({
       </article>
       <AssetSection taskId={task.id} view={assets} />
       <ProgressSection taskId={task.id} view={progress} />
-      {actor.role === "HEAD" && <TaskActions task={task} options={options} />}
+      {(actor.role === "ADMIN" || actor.role === "HEAD") && (
+        <TaskActions task={task} options={options} />
+      )}
     </>
   );
 }

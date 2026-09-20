@@ -6,7 +6,7 @@ import { userService } from "@/lib/users/service";
 import { UserManagement } from "@/components/users/user-management";
 
 export default async function UsersPage() {
-  const actor = await requireRole("HEAD");
+  const actor = await requireRole(["ADMIN", "HEAD", "DEPUTY"]);
   const users = await userService(getDb(), getServerEnv()).list(
     new Headers(await headers()),
   );
@@ -19,7 +19,7 @@ export default async function UsersPage() {
           dùng.
         </p>
       </div>
-      <UserManagement users={users} actorId={actor.id} />
+      <UserManagement users={users} actorId={actor.id} actorRole={actor.role} />
     </>
   );
 }

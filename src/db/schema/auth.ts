@@ -27,7 +27,7 @@ export const user = pgTable(
       .defaultNow()
       .$onUpdate(() => /* @__PURE__ */ new Date())
       .notNull(),
-    role: text("role", { enum: ["HEAD", "DEPUTY", "EMPLOYEE"] })
+    role: text("role", { enum: ["ADMIN", "HEAD", "DEPUTY", "EMPLOYEE"] })
       .default("EMPLOYEE")
       .notNull(),
     banned: boolean("banned").default(false).notNull(),
@@ -37,7 +37,7 @@ export const user = pgTable(
   (table) => [
     check(
       "user_role_valid",
-      sql`${table.role} IN ('HEAD', 'DEPUTY', 'EMPLOYEE')`,
+      sql`${table.role} IN ('ADMIN', 'HEAD', 'DEPUTY', 'EMPLOYEE')`,
     ),
   ],
 );

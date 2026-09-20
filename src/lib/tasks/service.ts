@@ -227,7 +227,7 @@ export function taskService(db: AuthDatabase, env: ServerEnv) {
             .where(
               and(
                 eq(user.banned, false),
-                actor.role === "HEAD"
+                actor.role === "ADMIN" || actor.role === "HEAD"
                   ? undefined
                   : actor.role === "DEPUTY"
                     ? or(eq(user.id, actor.id), eq(user.role, "EMPLOYEE"))

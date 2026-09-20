@@ -23,6 +23,13 @@ vi.mock("next-themes", () => ({
   }),
 }));
 
+const adminActor: Actor = {
+  id: "admin-1",
+  name: "Nguyễn Văn Admin",
+  email: "admin@kigholding.vn",
+  role: "ADMIN",
+};
+
 const headActor: Actor = {
   id: "head-1",
   name: "Nguyễn Văn Head",
@@ -137,7 +144,26 @@ describe("DesktopSidebar Component", () => {
     ).toBeInTheDocument();
   });
 
-  it("hides admin links for DEPUTY role", () => {
+  it("renders operational links and admin links for ADMIN role", () => {
+    render(<DesktopSidebar actor={adminActor} />);
+
+    expect(screen.getByRole("link", { name: /Hôm nay/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Tổng quan/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Công việc/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Lịch/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Báo cáo/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Tìm kiếm/ })).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /Nhật ký hệ thống/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /Quản lý người dùng/ }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Nguyễn Văn Admin")).toBeInTheDocument();
+    expect(screen.getByText("ADMIN")).toBeInTheDocument();
+  });
+
+  it("renders User Management and hides Audit Log for DEPUTY role", () => {
     render(<DesktopSidebar actor={deputyActor} />);
 
     expect(screen.getByRole("link", { name: /Hôm nay/ })).toBeInTheDocument();
@@ -146,8 +172,8 @@ describe("DesktopSidebar Component", () => {
       screen.queryByRole("link", { name: /Nhật ký hệ thống/ }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("link", { name: /Quản lý người dùng/ }),
-    ).not.toBeInTheDocument();
+      screen.getByRole("link", { name: /Quản lý người dùng/ }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Trần Thị Deputy")).toBeInTheDocument();
     expect(screen.getByText("DEPUTY")).toBeInTheDocument();
   });
@@ -226,6 +252,34 @@ describe("MobileBottomNav Component", () => {
     expect(
       screen.getByRole("link", { name: /Nhật ký hệ thống/ }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /Quản lý người dùng/ }),
+    ).toBeInTheDocument();
+  });
+
+  it("renders admin links in More sheet for ADMIN role", () => {
+    render(<MobileBottomNav role="ADMIN" />);
+
+    const moreButton = screen.getByRole("button", { name: "Thêm" });
+    fireEvent.click(moreButton);
+
+    expect(
+      screen.getByRole("link", { name: /Nhật ký hệ thống/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /Quản lý người dùng/ }),
+    ).toBeInTheDocument();
+  });
+
+  it("renders only User Management in More sheet for DEPUTY role", () => {
+    render(<MobileBottomNav role="DEPUTY" />);
+
+    const moreButton = screen.getByRole("button", { name: "Thêm" });
+    fireEvent.click(moreButton);
+
+    expect(
+      screen.queryByRole("link", { name: /Nhật ký hệ thống/ }),
+    ).not.toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: /Quản lý người dùng/ }),
     ).toBeInTheDocument();

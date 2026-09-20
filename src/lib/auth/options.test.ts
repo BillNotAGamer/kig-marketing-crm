@@ -28,9 +28,14 @@ describe("Better Auth persistence configuration", () => {
     expect(authOptions.advanced.database.generateId).toBe("uuid");
     const options = authOptions.plugins[0].options!;
     expect(options.defaultRole).toBe("EMPLOYEE");
-    expect(options.adminRoles).toEqual(["HEAD"]);
+    expect(options.adminRoles).toEqual(["ADMIN", "HEAD"]);
     expect(options).not.toHaveProperty("adminUserIds");
-    expect(Object.keys(authRoles)).toEqual(["HEAD", "DEPUTY", "EMPLOYEE"]);
+    expect(Object.keys(authRoles)).toEqual([
+      "ADMIN",
+      "HEAD",
+      "DEPUTY",
+      "EMPLOYEE",
+    ]);
   });
   it("configures Better Auth with minPasswordLength: 6 and maxPasswordLength: 128", () => {
     const auth = createAuth(
@@ -96,7 +101,7 @@ describe("Better Auth persistence configuration", () => {
       authOptions.databaseHooks.user.update.before({ role }),
     ).rejects.toMatchObject({ status: "BAD_REQUEST" });
   });
-  it.each(["HEAD", "DEPUTY", "EMPLOYEE"])(
+  it.each(["ADMIN", "HEAD", "DEPUTY", "EMPLOYEE"])(
     "accepts single canonical role %s",
     async (role) => {
       await expect(

@@ -40,11 +40,6 @@ const operationalItems: NavItem[] = [
   { label: "Tìm kiếm", href: "/search", icon: Search },
 ];
 
-const adminItems: NavItem[] = [
-  { label: "Nhật ký hệ thống", href: "/audit", icon: ScrollText },
-  { label: "Quản lý người dùng", href: "/users", icon: Users },
-];
-
 export function DesktopSidebar({ actor }: DesktopSidebarProps) {
   const pathname = usePathname();
 
@@ -107,42 +102,64 @@ export function DesktopSidebar({ actor }: DesktopSidebarProps) {
           </div>
         </div>
 
-        {/* Admin Section (HEAD only) */}
-        {actor.role === "HEAD" && (
-          <div>
-            <div className="px-3 pb-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-              QUẢN TRỊ
-            </div>
-            <div className="space-y-1">
-              {adminItems.map((item) => {
-                const active = isRouteActive(pathname, item.href);
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    aria-current={active ? "page" : undefined}
-                    className={cn(
-                      "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                      active
-                        ? "border-l-2 border-primary bg-primary/10 text-primary font-semibold shadow-2xs"
-                        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-                    )}
-                  >
-                    <Icon
+        {/* Admin Section */}
+        {(() => {
+          const canViewAudit = actor.role === "ADMIN" || actor.role === "HEAD";
+          const canViewUsers =
+            actor.role === "ADMIN" ||
+            actor.role === "HEAD" ||
+            actor.role === "DEPUTY";
+          const visibleAdminItems = [
+            ...(canViewAudit
+              ? [
+                  {
+                    label: "Nhật ký hệ thống",
+                    href: "/audit",
+                    icon: ScrollText,
+                  },
+                ]
+              : []),
+            ...(canViewUsers
+              ? [{ label: "Quản lý người dùng", href: "/users", icon: Users }]
+              : []),
+          ];
+          if (visibleAdminItems.length === 0) return null;
+          return (
+            <div>
+              <div className="px-3 pb-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                QUẢN TRỊ
+              </div>
+              <div className="space-y-1">
+                {visibleAdminItems.map((item) => {
+                  const active = isRouteActive(pathname, item.href);
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      aria-current={active ? "page" : undefined}
                       className={cn(
-                        "h-4 w-4 shrink-0",
-                        active ? "text-primary" : "text-muted-foreground",
+                        "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                        active
+                          ? "border-l-2 border-primary bg-primary/10 text-primary font-semibold shadow-2xs"
+                          : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
                       )}
-                    />
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
+                    >
+                      <Icon
+                        className={cn(
+                          "h-4 w-4 shrink-0",
+                          active ? "text-primary" : "text-muted-foreground",
+                        )}
+                      />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
       </nav>
 
       {/* Account Section at Bottom */}

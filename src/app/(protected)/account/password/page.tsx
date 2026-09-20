@@ -1,8 +1,8 @@
-import { requireRole } from "@/lib/auth/session";
+import { requireSession } from "@/lib/auth/session";
 import { OwnPasswordForm } from "@/components/users/own-password-form";
 
 export default async function OwnPasswordPage() {
-  await requireRole("HEAD");
+  await requireSession();
   return (
     <section className="space-y-6">
       <h1 className="text-3xl font-semibold">Đổi mật khẩu</h1>

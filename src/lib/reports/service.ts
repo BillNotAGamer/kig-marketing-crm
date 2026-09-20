@@ -128,7 +128,7 @@ export function reportsService(
         id: u.id,
         name: u.name,
         email: u.email,
-        role: u.role as "HEAD" | "DEPUTY" | "EMPLOYEE",
+        role: u.role as "ADMIN" | "HEAD" | "DEPUTY" | "EMPLOYEE",
         banned: u.banned,
       }));
 

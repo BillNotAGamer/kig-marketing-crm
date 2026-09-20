@@ -30,6 +30,7 @@ for (const role of appRoleValues) {
     `${role} has the explicit expected grant for %s`,
     (permission) => {
       const permitted =
+        role === "ADMIN" ||
         role === "HEAD" ||
         ["task:create-self", "task:read-self"].includes(permission) ||
         (role === "DEPUTY" &&
@@ -62,7 +63,9 @@ for (const role of appRoleValues) {
           banned: false,
         }),
       ).toBe(
-        role === "HEAD" || (role === "DEPUTY" && targetRole === "EMPLOYEE"),
+        role === "ADMIN" ||
+          role === "HEAD" ||
+          (role === "DEPUTY" && targetRole === "EMPLOYEE"),
       );
       expect(
         canAssignTask(actor(role), {

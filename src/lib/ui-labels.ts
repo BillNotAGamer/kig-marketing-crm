@@ -12,12 +12,14 @@ export const taskPriorityDisplay: Record<string, string> = {
 };
 
 export const roleDisplay: Record<string, string> = {
+  ADMIN: "Quản trị viên (ADMIN)",
   HEAD: "Trưởng phòng (HEAD)",
   DEPUTY: "Phó phòng (DEPUTY)",
   EMPLOYEE: "Nhân viên (EMPLOYEE)",
 };
 
 export const roleSelectDisplay: Record<string, string> = {
+  ADMIN: "Quản trị viên (ADMIN)",
   HEAD: "Trưởng phòng (HEAD)",
   DEPUTY: "Phó phòng (DEPUTY)",
   EMPLOYEE: "Nhân viên (EMPLOYEE)",

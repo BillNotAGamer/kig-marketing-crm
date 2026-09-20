@@ -11,7 +11,7 @@ export interface EmployeeOperationalRow {
   userId: string;
   name: string;
   email: string;
-  role: "HEAD" | "DEPUTY" | "EMPLOYEE";
+  role: "ADMIN" | "HEAD" | "DEPUTY" | "EMPLOYEE";
   banned: boolean;
   total: number;
   completed: number;
@@ -63,7 +63,7 @@ export interface UserRecordForDashboard {
   id: string;
   name: string;
   email: string;
-  role: "HEAD" | "DEPUTY" | "EMPLOYEE";
+  role: "ADMIN" | "HEAD" | "DEPUTY" | "EMPLOYEE";
   banned: boolean;
 }
 
@@ -281,6 +281,10 @@ export function deriveDashboardMetrics(params: {
     }
     // In team view, show all ACTIVE users, PLUS any inactive users who have tasks/reports/overdue
     if (isTeamView && banned && stats.total === 0 && stats.overdueCount === 0) {
+      continue;
+    }
+    // ADMIN is a system-level role: only show if they have operational task/overdue data
+    if (role === "ADMIN" && stats.total === 0 && stats.overdueCount === 0) {
       continue;
     }
 

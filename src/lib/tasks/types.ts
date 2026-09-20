@@ -3,7 +3,7 @@ export type Priority = (typeof priorities)[number];
 export type AssigneeOption = {
   id: string;
   name: string;
-  role: "HEAD" | "DEPUTY" | "EMPLOYEE";
+  role: "ADMIN" | "HEAD" | "DEPUTY" | "EMPLOYEE";
 };
 export type TaskDTO = {
   id: string;

@@ -15,6 +15,13 @@
       "when": 1789817779879,
       "tag": "0001_add_task_brand",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789895000000,
+      "tag": "0002_add_admin_role",
+      "breakpoints": true
     }
   ]
 }

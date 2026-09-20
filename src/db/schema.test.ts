@@ -216,7 +216,11 @@ describe("PostgreSQL V1.1 persistence metadata and generated SQL (offline)", () 
       readdirSync("drizzle")
         .filter((f) => f.endsWith(".sql"))
         .sort(),
-    ).toEqual(["0000_initial_v1_1.sql", "0001_add_task_brand.sql"]);
+    ).toEqual([
+      "0000_initial_v1_1.sql",
+      "0001_add_task_brand.sql",
+      "0002_add_admin_role.sql",
+    ]);
     expect(migration.match(/CREATE TABLE /g)).toHaveLength(9);
     expect(migration.match(/CREATE TYPE /g)).toHaveLength(6);
     expect(migration.match(/FOREIGN KEY /g)).toHaveLength(13);
@@ -240,5 +244,17 @@ describe("PostgreSQL V1.1 persistence metadata and generated SQL (offline)", () 
     expect(brandMigration).not.toMatch(
       /\b(?:DROP|TRUNCATE|DELETE FROM|CASCADE)\b/i,
     );
+
+    const adminMigration = readFileSync(
+      "drizzle/0002_add_admin_role.sql",
+      "utf8",
+    );
+    expect(adminMigration).toContain(
+      'ALTER TABLE "user" DROP CONSTRAINT "user_role_valid"',
+    );
+    expect(adminMigration).toContain(
+      "CHECK (\"user\".\"role\" IN ('ADMIN', 'HEAD', 'DEPUTY', 'EMPLOYEE'))",
+    );
+    expect(adminMigration).not.toMatch(/\b(?:TRUNCATE|DELETE FROM|CASCADE)\b/i);
   });
 });

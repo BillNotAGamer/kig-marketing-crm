@@ -8,12 +8,22 @@ export const userPermissions = [
   "user:enable",
   "user:change-role",
   "user:reset-password",
+  "user:change-own-password",
 ] as const;
 export type Permission = (typeof userPermissions)[number];
 const grants: Record<AppRole, readonly Permission[]> = {
+  ADMIN: userPermissions,
   HEAD: userPermissions,
-  DEPUTY: [],
-  EMPLOYEE: [],
+  DEPUTY: [
+    "user:create",
+    "user:read",
+    "user:update",
+    "user:disable",
+    "user:enable",
+    "user:reset-password",
+    "user:change-own-password",
+  ],
+  EMPLOYEE: ["user:change-own-password"],
 };
 export function hasPermission(role: string, permission: Permission): boolean {
   return (

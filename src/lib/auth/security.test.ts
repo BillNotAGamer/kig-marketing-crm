@@ -12,12 +12,43 @@ import {
 import { bootstrapSchema } from "../users/bootstrap";
 
 describe("Phase 2 role and command validation", () => {
-  it.each(userPermissions)("grants %s only to HEAD", (permission) => {
+  it.each(userPermissions)("grants %s to ADMIN and HEAD", (permission) => {
+    expect(hasPermission("ADMIN", permission)).toBe(true);
     expect(hasPermission("HEAD", permission)).toBe(true);
-    for (const role of ["DEPUTY", "EMPLOYEE", "HEAD,EMPLOYEE", "ADMIN", ""])
-      expect(hasPermission(role, permission)).toBe(false);
   });
-  it("restricts normal creation to DEPUTY/EMPLOYEE and separates sensitive commands", () => {
+  it("grants correct permissions to DEPUTY and EMPLOYEE", () => {
+    for (const permission of [
+      "user:create",
+      "user:read",
+      "user:update",
+      "user:disable",
+      "user:enable",
+      "user:reset-password",
+      "user:change-own-password",
+    ] as const) {
+      expect(hasPermission("DEPUTY", permission)).toBe(true);
+    }
+    expect(hasPermission("DEPUTY", "user:change-role")).toBe(false);
+
+    expect(hasPermission("EMPLOYEE", "user:change-own-password")).toBe(true);
+    for (const permission of [
+      "user:create",
+      "user:read",
+      "user:update",
+      "user:disable",
+      "user:enable",
+      "user:change-role",
+      "user:reset-password",
+    ] as const) {
+      expect(hasPermission("EMPLOYEE", permission)).toBe(false);
+    }
+    for (const role of ["HEAD,EMPLOYEE", "admin", "SUPERADMIN", ""]) {
+      for (const permission of userPermissions) {
+        expect(hasPermission(role, permission)).toBe(false);
+      }
+    }
+  });
+  it("restricts schema creation and separates sensitive commands", () => {
     const input = {
       name: "Fixture",
       email: " FIXTURE@EXAMPLE.INVALID ",
@@ -26,8 +57,14 @@ describe("Phase 2 role and command validation", () => {
     };
     expect(createUserSchema.parse(input).email).toBe("fixture@example.invalid");
     expect(createUserSchema.safeParse({ ...input, role: "HEAD" }).success).toBe(
-      false,
+      true,
     );
+    expect(
+      createUserSchema.safeParse({ ...input, role: "ADMIN" }).success,
+    ).toBe(true);
+    expect(
+      createUserSchema.safeParse({ ...input, role: "invalid" }).success,
+    ).toBe(false);
     expect(createUserSchema.safeParse({ ...input, banned: true }).success).toBe(
       false,
     );

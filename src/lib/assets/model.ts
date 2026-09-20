@@ -21,7 +21,7 @@ export function canAddAsset(
   task: { assignedToId: string; status: string; deletedAt: Date | null },
 ): boolean {
   if (task.deletedAt !== null) return false;
-  if (actor.role === "HEAD") return true;
+  if (actor.role === "ADMIN" || actor.role === "HEAD") return true;
   return task.status === "OPEN" && task.assignedToId === actor.id;
 }
 
@@ -31,7 +31,7 @@ export function canRemoveAsset(
   asset: { createdById: string; deletedAt: Date | null },
 ): boolean {
   if (task.deletedAt !== null || asset.deletedAt !== null) return false;
-  if (actor.role === "HEAD") return true;
+  if (actor.role === "ADMIN" || actor.role === "HEAD") return true;
   return (
     task.status === "OPEN" &&
     task.assignedToId === actor.id &&

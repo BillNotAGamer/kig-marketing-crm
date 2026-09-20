@@ -23,7 +23,8 @@
     "db:check": "drizzle-kit check && npm run auth:schema:check",
     "db:verify": "tsx scripts/verify-database.ts",
     "test:db": "tsx scripts/test-database.ts",
-    "auth:bootstrap-head": "tsx scripts/bootstrap-head.ts"
+    "auth:bootstrap-head": "tsx scripts/bootstrap-head.ts",
+    "auth:promote-first-admin": "tsx scripts/promote-first-admin.ts"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "1.7.5",

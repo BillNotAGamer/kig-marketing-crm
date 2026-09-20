@@ -116,7 +116,7 @@ export function progressService(
         today,
         canSubmit: canSubmitProgress(actor, parent) && !today.report,
         canCorrect:
-          actor.role === "HEAD" &&
+          (actor.role === "ADMIN" || actor.role === "HEAD") &&
           parent.status !== "CANCELLED" &&
           history.length > 0,
       };
@@ -198,7 +198,7 @@ export function progressService(
       input: unknown,
     ) =>
       execute(headers, true, async (tx, actor) => {
-        if (actor.role !== "HEAD")
+        if (actor.role !== "ADMIN" && actor.role !== "HEAD")
           throw new AccessError(403, "HEAD authorization required.");
         const values = correctionSchema.parse(input);
         taskIdSchema.parse(progressId);

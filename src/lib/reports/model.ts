@@ -50,7 +50,7 @@ export interface EmployeeReportRowDto {
   userId: string;
   name: string;
   email: string;
-  role: "HEAD" | "DEPUTY" | "EMPLOYEE";
+  role: "ADMIN" | "HEAD" | "DEPUTY" | "EMPLOYEE";
   banned: boolean;
   submittedReportsCount: number;
   completedReportsCount: number;
@@ -103,7 +103,7 @@ export interface RawUserForReport {
   id: string;
   name: string;
   email: string;
-  role: "HEAD" | "DEPUTY" | "EMPLOYEE";
+  role: "ADMIN" | "HEAD" | "DEPUTY" | "EMPLOYEE";
   banned: boolean;
 }
 
@@ -250,6 +250,10 @@ export function deriveReportMetrics(params: {
 
     // If user has zero submitted reports and zero overdue, and is banned, omit them
     if (u?.banned && rStats.submitted === 0 && overdue === 0) {
+      continue;
+    }
+    // ADMIN is a system-level role: only show if they have operational report/overdue data
+    if (u?.role === "ADMIN" && rStats.submitted === 0 && overdue === 0) {
       continue;
     }
 

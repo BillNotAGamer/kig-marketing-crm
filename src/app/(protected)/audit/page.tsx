@@ -6,7 +6,7 @@ import { AuditView } from "@/components/audit/audit-view";
 export default async function AuditPage(props: {
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
-  await requireRole("HEAD");
+  await requireRole(["ADMIN", "HEAD"]);
   const searchParams = await props.searchParams;
 
   const data = await getAudit().listAuditLogs(
@@ -21,7 +21,8 @@ export default async function AuditPage(props: {
           Nhật ký hệ thống (Audit Log)
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Bản ghi kiểm toán chỉ dành riêng cho Quản trị viên (HEAD)
+          Bản ghi kiểm toán bảo mật dành cho Quản trị viên và Trưởng phòng
+          (ADMIN / HEAD)
         </p>
       </div>
 
