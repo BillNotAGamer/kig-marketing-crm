@@ -1,9 +1,11 @@
 // @vitest-environment node
-import { expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { randomUUID } from "node:crypto";
 import {
   canAssignTask,
   canReadTask,
+  canReassignTask,
+  canViewTask,
   permitsTask,
   taskPermissions,
 } from "./policy";
@@ -32,22 +34,37 @@ for (const role of appRoleValues) {
       const permitted =
         role === "ADMIN" ||
         role === "HEAD" ||
-        ["task:create-self", "task:read-self"].includes(permission) ||
+        ["task:create-self", "task:read-self", "task:read-team"].includes(
+          permission,
+        ) ||
         (role === "DEPUTY" &&
-          ["task:read-team", "task:create-for-others"].includes(permission));
+          [
+            "task:read-team",
+            "task:create-for-others",
+            "task:reassign",
+          ].includes(permission));
       expect(permitsTask(role, permission)).toBe(permitted);
     },
   );
-  it(`${role} reads non-deleted self work, never deleted work`, () => {
+  it(`${role} reads non-deleted self work and foreign work, never deleted work`, () => {
     expect(
       canReadTask(actor(role), { assignedToId: id, deletedAt: null }),
+    ).toBe(true);
+    expect(
+      canViewTask(actor(role), { assignedToId: id, deletedAt: null }),
     ).toBe(true);
     expect(
       canReadTask(actor(role), { assignedToId: id, deletedAt: new Date() }),
     ).toBe(false);
     expect(
       canReadTask(actor(role), { assignedToId: other, deletedAt: null }),
-    ).toBe(role !== "EMPLOYEE");
+    ).toBe(true);
+    expect(
+      canViewTask(actor(role), { assignedToId: other, deletedAt: null }),
+    ).toBe(true);
+    expect(
+      canReadTask(actor(role), { assignedToId: other, deletedAt: new Date() }),
+    ).toBe(false);
   });
   it(`${role} can assign self only while ACTIVE`, () => {
     expect(canAssignTask(actor(role), { id, role, banned: false })).toBe(true);
@@ -205,4 +222,144 @@ it("derives the date in Asia/Ho_Chi_Minh across the UTC boundary", () => {
   expect(currentBusinessDate(new Date("2026-09-17T17:00:00Z"))).toBe(
     "2026-09-18",
   );
+});
+
+describe("Authoritative Task Visibility & Assignee Security Matrix", () => {
+  const adminActor = actor("ADMIN");
+  const headActor = actor("HEAD");
+  const deputyActor = actor("DEPUTY");
+  const employeeActor = actor("EMPLOYEE");
+
+  const foreignTask = {
+    id: other,
+    assignedToId: other,
+    deletedAt: null,
+  };
+
+  const deletedForeignTask = {
+    id: other,
+    assignedToId: other,
+    deletedAt: new Date(),
+  };
+
+  it("TASK READ: all active roles can view foreign non-deleted tasks", () => {
+    expect(canViewTask(adminActor, foreignTask)).toBe(true);
+    expect(canViewTask(headActor, foreignTask)).toBe(true);
+    expect(canViewTask(deputyActor, foreignTask)).toBe(true);
+    expect(canViewTask(employeeActor, foreignTask)).toBe(true);
+
+    expect(canReadTask(adminActor, foreignTask)).toBe(true);
+    expect(canReadTask(headActor, foreignTask)).toBe(true);
+    expect(canReadTask(deputyActor, foreignTask)).toBe(true);
+    expect(canReadTask(employeeActor, foreignTask)).toBe(true);
+  });
+
+  it("TASK READ: fail-closed for soft-deleted tasks across all roles", () => {
+    expect(canViewTask(adminActor, deletedForeignTask)).toBe(false);
+    expect(canViewTask(headActor, deletedForeignTask)).toBe(false);
+    expect(canViewTask(deputyActor, deletedForeignTask)).toBe(false);
+    expect(canViewTask(employeeActor, deletedForeignTask)).toBe(false);
+
+    expect(canReadTask(adminActor, deletedForeignTask)).toBe(false);
+    expect(canReadTask(headActor, deletedForeignTask)).toBe(false);
+    expect(canReadTask(deputyActor, deletedForeignTask)).toBe(false);
+    expect(canReadTask(employeeActor, deletedForeignTask)).toBe(false);
+  });
+
+  it("REASSIGN CAPABILITY: ADMIN, HEAD, DEPUTY permitted; EMPLOYEE denied", () => {
+    expect(canReassignTask(adminActor)).toBe(true);
+    expect(canReassignTask(headActor)).toBe(true);
+    expect(canReassignTask(deputyActor)).toBe(true);
+    expect(canReassignTask(employeeActor)).toBe(false);
+  });
+
+  it("ASSIGN / REASSIGN TARGETS: follows authoritative role constraints", () => {
+    const activeAdmin = { id: other, role: "ADMIN", banned: false };
+    const activeHead = { id: other, role: "HEAD", banned: false };
+    const activeDeputy = { id: other, role: "DEPUTY", banned: false };
+    const activeEmployee = { id: other, role: "EMPLOYEE", banned: false };
+    const bannedEmployee = { id: other, role: "EMPLOYEE", banned: true };
+
+    // ADMIN: can assign to any active role
+    expect(canAssignTask(adminActor, activeAdmin)).toBe(true);
+    expect(canAssignTask(adminActor, activeHead)).toBe(true);
+    expect(canAssignTask(adminActor, activeDeputy)).toBe(true);
+    expect(canAssignTask(adminActor, activeEmployee)).toBe(true);
+    expect(canAssignTask(adminActor, bannedEmployee)).toBe(false);
+
+    // HEAD: can assign to any active role
+    expect(canAssignTask(headActor, activeAdmin)).toBe(true);
+    expect(canAssignTask(headActor, activeHead)).toBe(true);
+    expect(canAssignTask(headActor, activeDeputy)).toBe(true);
+    expect(canAssignTask(headActor, activeEmployee)).toBe(true);
+    expect(canAssignTask(headActor, bannedEmployee)).toBe(false);
+
+    // DEPUTY: can assign to EMPLOYEE or self, but NOT HEAD or ADMIN
+    expect(canAssignTask(deputyActor, activeEmployee)).toBe(true);
+    expect(
+      canAssignTask(deputyActor, { id, role: "DEPUTY", banned: false }),
+    ).toBe(true);
+    expect(canAssignTask(deputyActor, activeHead)).toBe(false);
+    expect(canAssignTask(deputyActor, activeAdmin)).toBe(false);
+    expect(canAssignTask(deputyActor, bannedEmployee)).toBe(false);
+
+    // EMPLOYEE: self-assign only
+    expect(
+      canAssignTask(employeeActor, { id, role: "EMPLOYEE", banned: false }),
+    ).toBe(true);
+    expect(canAssignTask(employeeActor, activeEmployee)).toBe(false);
+    expect(canAssignTask(employeeActor, activeDeputy)).toBe(false);
+    expect(canAssignTask(employeeActor, activeHead)).toBe(false);
+    expect(canAssignTask(employeeActor, activeAdmin)).toBe(false);
+  });
+
+  it("EMPLOYEE SELF-CREATE: self-assign allowed, assigning to another user rejected", () => {
+    // Self-creation permission and assignment
+    expect(permitsTask("EMPLOYEE", "task:create-self")).toBe(true);
+    expect(
+      canAssignTask(employeeActor, { id, role: "EMPLOYEE", banned: false }),
+    ).toBe(true);
+
+    // Creating for others denied
+    expect(permitsTask("EMPLOYEE", "task:create-for-others")).toBe(false);
+    expect(
+      canAssignTask(employeeActor, {
+        id: other,
+        role: "EMPLOYEE",
+        banned: false,
+      }),
+    ).toBe(false);
+    expect(
+      canAssignTask(employeeActor, {
+        id: other,
+        role: "DEPUTY",
+        banned: false,
+      }),
+    ).toBe(false);
+    expect(
+      canAssignTask(employeeActor, { id: other, role: "HEAD", banned: false }),
+    ).toBe(false);
+    expect(
+      canAssignTask(employeeActor, { id: other, role: "ADMIN", banned: false }),
+    ).toBe(false);
+  });
+
+  it("IDOR: EMPLOYEE with known foreign Task UUID can READ but cannot MUTATE", () => {
+    // Read: ALLOW
+    expect(canReadTask(employeeActor, foreignTask)).toBe(true);
+    expect(canViewTask(employeeActor, foreignTask)).toBe(true);
+
+    // Reassign: DENY
+    expect(permitsTask(employeeActor.role, "task:reassign")).toBe(false);
+    expect(canReassignTask(employeeActor)).toBe(false);
+
+    // Metadata update: DENY
+    expect(permitsTask(employeeActor.role, "task:update")).toBe(false);
+
+    // Cancel: DENY
+    expect(permitsTask(employeeActor.role, "task:cancel")).toBe(false);
+
+    // Delete: DENY
+    expect(permitsTask(employeeActor.role, "task:delete")).toBe(false);
+  });
 });

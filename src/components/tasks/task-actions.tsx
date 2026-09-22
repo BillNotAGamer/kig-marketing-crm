@@ -10,15 +10,31 @@ import { roleDisplay } from "@/lib/ui-labels";
 export function TaskActions({
   task,
   options,
+  canEdit = true,
+  canReassign = true,
+  canCancel = true,
+  canDelete = true,
 }: {
   task: TaskDTO;
   options: AssigneeOption[];
+  canEdit?: boolean;
+  canReassign?: boolean;
+  canCancel?: boolean;
+  canDelete?: boolean;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [confirm, setConfirm] = useState<"cancel" | "soft-delete" | null>(null);
+
+  const hasOpenActions =
+    task.status === "OPEN" && (canEdit || canReassign || canCancel);
+
+  if (!hasOpenActions && !canDelete) {
+    return null;
+  }
+
   async function send(command: string, body: Record<string, unknown>) {
     setBusy(true);
     setError("");
@@ -57,59 +73,67 @@ export function TaskActions({
       className="space-y-5 rounded-xl border bg-card p-5"
     >
       <h2 className="text-lg font-semibold">Quản trị công việc</h2>
-      {task.status === "OPEN" && (
+      {hasOpenActions && (
         <>
-          <Button variant="outline" asChild className="min-h-11">
-            <Link href={`/tasks/${task.id}/edit`}>Chỉnh sửa công việc</Link>
-          </Button>
-          <form
-            aria-label="Chuyển giao công việc"
-            onSubmit={reassign}
-            className="max-w-md space-y-3"
-          >
-            <Label htmlFor="new-assignee">Người thực hiện mới</Label>
-            <select
-              id="new-assignee"
-              name="assignedToId"
-              required
-              defaultValue=""
-              className="min-h-11 w-full rounded-md border bg-background px-3 text-base sm:text-sm"
-            >
-              <option value="" disabled>
-                Chọn nhân viên đang hoạt động
-              </option>
-              {options
-                .filter((value) => value.id !== task.assignedToId)
-                .map((value) => (
-                  <option key={value.id} value={value.id}>
-                    {value.name} · {roleDisplay[value.role] ?? value.role}
-                  </option>
-                ))}
-            </select>
-            <Button variant="outline" disabled={busy} className="min-h-11">
-              Chuyển giao công việc
+          {canEdit && (
+            <Button variant="outline" asChild className="min-h-11">
+              <Link href={`/tasks/${task.id}/edit`}>Chỉnh sửa công việc</Link>
             </Button>
-          </form>
-          <Button
-            variant="outline"
-            disabled={busy}
-            onClick={() => setConfirm("cancel")}
-            className="min-h-11"
-          >
-            Hủy công việc
-          </Button>
+          )}
+          {canReassign && (
+            <form
+              aria-label="Chuyển giao công việc"
+              onSubmit={reassign}
+              className="max-w-md space-y-3"
+            >
+              <Label htmlFor="new-assignee">Người thực hiện mới</Label>
+              <select
+                id="new-assignee"
+                name="assignedToId"
+                required
+                defaultValue=""
+                className="min-h-11 w-full rounded-md border bg-background px-3 text-base sm:text-sm"
+              >
+                <option value="" disabled>
+                  Chọn nhân viên đang hoạt động
+                </option>
+                {options
+                  .filter((value) => value.id !== task.assignedToId)
+                  .map((value) => (
+                    <option key={value.id} value={value.id}>
+                      {value.name} · {roleDisplay[value.role] ?? value.role}
+                    </option>
+                  ))}
+              </select>
+              <Button variant="outline" disabled={busy} className="min-h-11">
+                Chuyển giao công việc
+              </Button>
+            </form>
+          )}
+          {canCancel && (
+            <Button
+              variant="outline"
+              disabled={busy}
+              onClick={() => setConfirm("cancel")}
+              className="min-h-11"
+            >
+              Hủy công việc
+            </Button>
+          )}
         </>
       )}
-      <div>
-        <Button
-          variant="destructive"
-          disabled={busy}
-          onClick={() => setConfirm("soft-delete")}
-          className="min-h-11"
-        >
-          Xóa công việc
-        </Button>
-      </div>
+      {canDelete && (
+        <div>
+          <Button
+            variant="destructive"
+            disabled={busy}
+            onClick={() => setConfirm("soft-delete")}
+            className="min-h-11"
+          >
+            Xóa công việc
+          </Button>
+        </div>
+      )}
       {confirm && (
         <div
           role="group"

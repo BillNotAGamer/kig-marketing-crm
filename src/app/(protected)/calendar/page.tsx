@@ -16,7 +16,7 @@ export default async function CalendarPage({
 }: {
   searchParams: Promise<{ view?: string; date?: string }>;
 }) {
-  const actor = await requireSession();
+  await requireSession();
   const params = await searchParams;
 
   const businessToday = currentBusinessDate();
@@ -50,8 +50,6 @@ export default async function CalendarPage({
     { from, to },
   );
 
-  const isTeamReader = actor.role !== "EMPLOYEE";
-
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -60,9 +58,7 @@ export default async function CalendarPage({
             Lịch làm việc
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {isTeamReader
-              ? "Lịch công việc toàn đội ngũ theo mốc giao và hạn hoàn thành."
-              : "Lịch công việc được giao của bạn."}
+            Lịch công việc toàn đội ngũ theo mốc giao và hạn hoàn thành.
           </p>
         </div>
       </div>
@@ -72,7 +68,7 @@ export default async function CalendarPage({
         businessToday={businessToday}
         initialView={activeView}
         initialDate={activeDate}
-        isTeamReader={isTeamReader}
+        isTeamReader={true}
       />
     </div>
   );

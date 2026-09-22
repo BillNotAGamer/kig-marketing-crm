@@ -29,10 +29,20 @@ export default async function TaskPage({
     new Headers(await headers()),
     task.id,
   );
-  const options =
-    (actor.role === "ADMIN" || actor.role === "HEAD") && task.status === "OPEN"
-      ? await getTasks().listAssignees(new Headers(await headers()))
-      : [];
+  const canReassign =
+    (actor.role === "ADMIN" ||
+      actor.role === "HEAD" ||
+      actor.role === "DEPUTY") &&
+    task.status === "OPEN";
+  const canEdit =
+    (actor.role === "ADMIN" || actor.role === "HEAD") && task.status === "OPEN";
+  const canCancel =
+    (actor.role === "ADMIN" || actor.role === "HEAD") && task.status === "OPEN";
+  const canDelete = actor.role === "ADMIN" || actor.role === "HEAD";
+
+  const options = canReassign
+    ? await getTasks().listAssignees(new Headers(await headers()))
+    : [];
   return (
     <>
       <Link href="/tasks" className="text-sm underline">
@@ -85,8 +95,15 @@ export default async function TaskPage({
       </article>
       <AssetSection taskId={task.id} view={assets} />
       <ProgressSection taskId={task.id} view={progress} />
-      {(actor.role === "ADMIN" || actor.role === "HEAD") && (
-        <TaskActions task={task} options={options} />
+      {(canEdit || canReassign || canCancel || canDelete) && (
+        <TaskActions
+          task={task}
+          options={options}
+          canEdit={canEdit}
+          canReassign={canReassign}
+          canCancel={canCancel}
+          canDelete={canDelete}
+        />
       )}
     </>
   );

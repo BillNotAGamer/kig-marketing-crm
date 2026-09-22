@@ -1,6 +1,5 @@
 import { z } from "zod";
 import type { Actor } from "../auth/session-core";
-import { permitsTask } from "../tasks/policy";
 import type { TaskAsset } from "../../db/schema/task-assets";
 import {
   buildOpenUrl,
@@ -40,14 +39,10 @@ export function canRemoveAsset(
 }
 
 export function canReadAssets(
-  actor: Actor,
+  _actor: Actor,
   task: { assignedToId: string; deletedAt: Date | null },
 ): boolean {
-  return (
-    task.deletedAt === null &&
-    (permitsTask(actor.role, "task:read-team") ||
-      task.assignedToId === actor.id)
-  );
+  return task.deletedAt === null;
 }
 
 export interface TaskAssetDTO {

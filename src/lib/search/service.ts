@@ -19,7 +19,6 @@ import {
 } from "../auth/factory";
 import { authorizedActor, type Actor } from "../auth/session-core";
 import type { ServerEnv } from "../env-schema";
-import { permitsTask } from "../tasks/policy";
 import { currentBusinessDate } from "../tasks/validation";
 import {
   escapeSqlLikePattern,
@@ -54,34 +53,23 @@ export function searchService(
     const query = taskSearchQuerySchema.parse(rawQuery);
     const businessToday = currentBusinessDate(clock());
 
-    return execute(headers, async (tx, actor) => {
-      const isTeamReader = permitsTask(actor.role, "task:read-team");
-
+    return execute(headers, async (tx) => {
       const conditions = [isNull(task.deletedAt)];
 
-      // Role isolation: EMPLOYEE sees own assigned work only
-      if (!isTeamReader) {
-        conditions.push(eq(task.assignedToId, actor.id));
-      } else if (query.assigneeId) {
+      if (query.assigneeId) {
         conditions.push(eq(task.assignedToId, query.assigneeId));
       }
 
       // Keyword query
       if (query.q && query.q.length > 0) {
         const pattern = `%${escapeSqlLikePattern(query.q)}%`;
-        if (isTeamReader) {
-          conditions.push(
-            or(
-              ilike(task.title, pattern),
-              ilike(task.description, pattern),
-              ilike(assignee.name, pattern),
-            )!,
-          );
-        } else {
-          conditions.push(
-            or(ilike(task.title, pattern), ilike(task.description, pattern))!,
-          );
-        }
+        conditions.push(
+          or(
+            ilike(task.title, pattern),
+            ilike(task.description, pattern),
+            ilike(assignee.name, pattern),
+          )!,
+        );
       }
 
       // Status filter

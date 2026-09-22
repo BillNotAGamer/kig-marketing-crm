@@ -286,7 +286,21 @@ describe("Task Asset removal authorization (canRemoveAsset)", () => {
 });
 
 describe("Task Asset read authorization (canReadAssets)", () => {
-  it("allows HEAD and DEPUTY to read deliverables of any non-deleted task", () => {
+  it("allows all active roles (ADMIN, HEAD, DEPUTY, EMPLOYEE) to read deliverables of any non-deleted task", () => {
+    const adminActor: Actor = {
+      id: "admin-uuid-0",
+      role: "ADMIN",
+      name: "Admin User",
+      email: "admin@kig.local",
+    };
+
+    expect(
+      canReadAssets(adminActor, {
+        assignedToId: employeeActorA.id,
+        deletedAt: null,
+      }),
+    ).toBe(true);
+
     expect(
       canReadAssets(headActor, {
         assignedToId: employeeActorA.id,
@@ -300,9 +314,7 @@ describe("Task Asset read authorization (canReadAssets)", () => {
         deletedAt: null,
       }),
     ).toBe(true);
-  });
 
-  it("allows EMPLOYEE to read only their own assigned non-deleted tasks", () => {
     expect(
       canReadAssets(employeeActorA, {
         assignedToId: employeeActorA.id,
@@ -310,12 +322,13 @@ describe("Task Asset read authorization (canReadAssets)", () => {
       }),
     ).toBe(true);
 
+    // Foreign task: EMPLOYEE can view deliverables!
     expect(
       canReadAssets(employeeActorA, {
         assignedToId: employeeActorB.id,
         deletedAt: null,
       }),
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it("denies all roles from reading deliverables of soft-deleted task", () => {
@@ -327,8 +340,22 @@ describe("Task Asset read authorization (canReadAssets)", () => {
     ).toBe(false);
 
     expect(
+      canReadAssets(deputyActor, {
+        assignedToId: employeeActorA.id,
+        deletedAt: new Date(),
+      }),
+    ).toBe(false);
+
+    expect(
       canReadAssets(employeeActorA, {
         assignedToId: employeeActorA.id,
+        deletedAt: new Date(),
+      }),
+    ).toBe(false);
+
+    expect(
+      canReadAssets(employeeActorA, {
+        assignedToId: employeeActorB.id,
         deletedAt: new Date(),
       }),
     ).toBe(false);

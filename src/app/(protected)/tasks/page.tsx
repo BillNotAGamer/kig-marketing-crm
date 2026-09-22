@@ -11,7 +11,7 @@ import {
 } from "@/lib/ui-labels";
 
 export default async function TasksPage() {
-  const actor = await requireSession();
+  await requireSession();
   const tasks = await getTasks().listTasks(new Headers(await headers()));
   return (
     <>
@@ -19,9 +19,7 @@ export default async function TasksPage() {
         <div>
           <h1 className="text-3xl font-semibold">Công việc</h1>
           <p className="mt-2 text-muted-foreground">
-            {actor.role === "EMPLOYEE"
-              ? "Công việc được giao cho bạn."
-              : "Danh sách công việc và lịch sử hoạt động của nhóm."}
+            Danh sách công việc và lịch sử hoạt động của nhóm.
           </p>
         </div>
         <Button asChild className="min-h-11">

@@ -8,7 +8,6 @@ import {
 } from "../auth/factory";
 import { authorizedActor, type Actor } from "../auth/session-core";
 import type { ServerEnv } from "../env-schema";
-import { permitsTask } from "../tasks/policy";
 import { currentBusinessDate } from "../tasks/validation";
 import {
   deriveDashboardMetrics,
@@ -41,7 +40,7 @@ export function dashboardService(
     const businessToday = currentBusinessDate(clock());
 
     return execute(headers, async (tx, actor) => {
-      const isTeamView = permitsTask(actor.role, "task:read-team");
+      const isTeamView = actor.role !== "EMPLOYEE";
 
       // 1. Query visible tasks
       const taskWhere = isTeamView

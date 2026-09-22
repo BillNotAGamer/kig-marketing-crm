@@ -21,8 +21,9 @@ const grants: Record<AppRole, readonly TaskPermission[]> = {
     "task:create-for-others",
     "task:read-self",
     "task:read-team",
+    "task:reassign",
   ],
-  EMPLOYEE: ["task:create-self", "task:read-self"],
+  EMPLOYEE: ["task:create-self", "task:read-self", "task:read-team"],
 };
 export function permitsTask(role: AppRole, permission: TaskPermission) {
   return grants[role].includes(permission);
@@ -48,13 +49,13 @@ export function canAssignTask(
       target.role === "EMPLOYEE")
   );
 }
-export function canReadTask(
-  actor: Actor,
-  target: { assignedToId: string; deletedAt: Date | null },
+export function canViewTask(
+  _actor: Actor,
+  target: { assignedToId?: string; deletedAt: Date | null },
 ) {
-  return (
-    target.deletedAt === null &&
-    (permitsTask(actor.role, "task:read-team") ||
-      target.assignedToId === actor.id)
-  );
+  return target.deletedAt === null;
+}
+export const canReadTask = canViewTask;
+export function canReassignTask(actor: Actor) {
+  return permitsTask(actor.role, "task:reassign");
 }

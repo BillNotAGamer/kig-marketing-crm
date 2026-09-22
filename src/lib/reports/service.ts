@@ -7,7 +7,6 @@ import {
 } from "../auth/factory";
 import { authorizedActor, type Actor } from "../auth/session-core";
 import type { ServerEnv } from "../env-schema";
-import { permitsTask } from "../tasks/policy";
 import { currentBusinessDate } from "../tasks/validation";
 import {
   deriveReportMetrics,
@@ -47,7 +46,7 @@ export function reportsService(
     const to = parsed.to || defaultRange.to;
 
     return execute(headers, async (tx, actor) => {
-      const isTeamView = permitsTask(actor.role, "task:read-team");
+      const isTeamView = actor.role !== "EMPLOYEE";
 
       // 1. Query daily updates in range respecting task visibility
       const reportWhere = isTeamView

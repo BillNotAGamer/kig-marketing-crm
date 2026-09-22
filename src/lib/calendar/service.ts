@@ -8,7 +8,6 @@ import {
 } from "../auth/factory";
 import { authorizedActor, type Actor } from "../auth/session-core";
 import type { ServerEnv } from "../env-schema";
-import { permitsTask } from "../tasks/policy";
 import {
   calendarQuerySchema,
   deriveEmployeeTodayTasks,
@@ -58,10 +57,8 @@ export function calendarService(
     const input = calendarQuerySchema.parse(rawInput);
     const businessToday = currentBusinessDate(clock);
 
-    return execute(headers, async (tx, actor) => {
-      const isTeamReader = permitsTask(actor.role, "task:read-team");
-
-      // Query tasks matching date range and role authorization
+    return execute(headers, async (tx) => {
+      // Query tasks matching date range - all visible non-deleted tasks
       const rows = await tx
         .select(taskProjection)
         .from(task)
@@ -70,7 +67,6 @@ export function calendarService(
         .where(
           and(
             isNull(task.deletedAt),
-            isTeamReader ? undefined : eq(task.assignedToId, actor.id),
             or(
               and(
                 sql`${task.assignedDate} >= ${input.from}`,
@@ -172,7 +168,7 @@ export function calendarService(
     const businessToday = currentBusinessDate(clock);
 
     return execute(headers, async (tx, actor) => {
-      const isTeamReader = permitsTask(actor.role, "task:read-team");
+      const isTeamReader = actor.role !== "EMPLOYEE";
 
       // Query tasks relevant to today: assigned today, due today, or overdue OPEN tasks
       const rows = await tx

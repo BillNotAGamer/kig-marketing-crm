@@ -14,7 +14,6 @@ import { administrationLock } from "../users/service";
 import {
   canAssignTask,
   canReadTask,
-  permitsTask,
   requireTaskPermission,
   type TaskPermission,
 } from "./policy";
@@ -48,22 +47,14 @@ const projection = {
   createdAt: task.createdAt,
   updatedAt: task.updatedAt,
 };
-function queryTasks(tx: Transaction, actor: Actor, id?: string) {
+function queryTasks(tx: Transaction, id?: string) {
   return tx
     .select(projection)
     .from(task)
     .innerJoin(creator, eq(task.createdById, creator.id))
     .innerJoin(assignee, eq(task.assignedToId, assignee.id))
     .leftJoin(brand, eq(task.brandId, brand.id))
-    .where(
-      and(
-        isNull(task.deletedAt),
-        permitsTask(actor.role, "task:read-team")
-          ? undefined
-          : eq(task.assignedToId, actor.id),
-        id ? eq(task.id, id) : undefined,
-      ),
-    );
+    .where(and(isNull(task.deletedAt), id ? eq(task.id, id) : undefined));
 }
 type JoinedTask = Awaited<ReturnType<typeof queryTasks>>[number];
 function dto(row: JoinedTask): TaskDTO {
@@ -77,8 +68,8 @@ function dto(row: JoinedTask): TaskDTO {
     updatedAt: row.updatedAt.toISOString(),
   };
 }
-async function getDTO(tx: Transaction, actor: Actor, id: string) {
-  const [row] = await queryTasks(tx, actor, id);
+async function getDTO(tx: Transaction, id: string) {
+  const [row] = await queryTasks(tx, id);
   if (!row) throw new AccessError(404, "Task not found.");
   return dto(row);
 }
@@ -201,22 +192,22 @@ export function taskService(db: AuthDatabase, env: ServerEnv) {
       if (notice) await notify(tx, actor, after, notice);
       return permission === "task:delete"
         ? { success: true as const }
-        : getDTO(tx, actor, id);
+        : getDTO(tx, id);
     });
   }
   return {
     listTasks: (headers: Headers) =>
-      execute(headers, false, async (tx, actor) =>
+      execute(headers, false, async (tx) =>
         (
-          await queryTasks(tx, actor).orderBy(
+          await queryTasks(tx).orderBy(
             desc(task.assignedDate),
             desc(task.createdAt),
           )
         ).map(dto),
       ),
     getTask: (headers: Headers, id: string) =>
-      execute(headers, false, async (tx, actor) =>
-        getDTO(tx, actor, taskIdSchema.parse(id)),
+      execute(headers, false, async (tx) =>
+        getDTO(tx, taskIdSchema.parse(id)),
       ),
     listAssignees: (headers: Headers) =>
       execute(headers, false, async (tx, actor): Promise<AssigneeOption[]> =>
@@ -240,6 +231,12 @@ export function taskService(db: AuthDatabase, env: ServerEnv) {
     createTask: (headers: Headers, input: unknown) =>
       execute(headers, true, async (tx, actor) => {
         const values = createTaskSchema.parse(input);
+        if (actor.role === "EMPLOYEE" && values.assignedToId !== actor.id) {
+          throw new AccessError(
+            403,
+            "Access denied: employees can only assign tasks to themselves.",
+          );
+        }
         requireTaskPermission(
           actor,
           values.assignedToId === actor.id
@@ -266,7 +263,7 @@ export function taskService(db: AuthDatabase, env: ServerEnv) {
           .returning();
         await audit(tx, actor, "CREATE_TASK", row);
         await notify(tx, actor, row, "TASK_ASSIGNED");
-        return getDTO(tx, actor, row.id);
+        return getDTO(tx, row.id);
       }),
     updateTaskMetadata: async (
       headers: Headers,
