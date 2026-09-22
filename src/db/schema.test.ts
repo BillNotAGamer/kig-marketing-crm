@@ -76,9 +76,9 @@ describe("PostgreSQL V1.1 persistence metadata and generated SQL (offline)", () 
           expect(column.getSQLType()).toBe("timestamp with time zone");
       }
   });
-  it("uses RESTRICT for all 15 foreign keys and leaves audit actor nullable", () => {
+  it("uses RESTRICT for all 14 foreign keys and leaves audit actor nullable", () => {
     const keys = databaseTables.flatMap((t) => getTableConfig(t).foreignKeys);
-    expect(keys).toHaveLength(15);
+    expect(keys).toHaveLength(14);
     for (const key of keys) {
       expect(key.onDelete).toBe("restrict");
       for (const column of key.reference().columns)
@@ -220,6 +220,7 @@ describe("PostgreSQL V1.1 persistence metadata and generated SQL (offline)", () 
       "0000_initial_v1_1.sql",
       "0001_add_task_brand.sql",
       "0002_add_admin_role.sql",
+      "0003_permanent_user_deletion.sql",
     ]);
     expect(migration.match(/CREATE TABLE /g)).toHaveLength(9);
     expect(migration.match(/CREATE TYPE /g)).toHaveLength(6);
@@ -256,5 +257,17 @@ describe("PostgreSQL V1.1 persistence metadata and generated SQL (offline)", () 
       "CHECK (\"user\".\"role\" IN ('ADMIN', 'HEAD', 'DEPUTY', 'EMPLOYEE'))",
     );
     expect(adminMigration).not.toMatch(/\b(?:TRUNCATE|DELETE FROM|CASCADE)\b/i);
+
+    const deletionMigration = readFileSync(
+      "drizzle/0003_permanent_user_deletion.sql",
+      "utf8",
+    );
+    expect(deletionMigration).toContain(
+      'ALTER TABLE "audit_log" DROP CONSTRAINT IF EXISTS "audit_log_actor_user_id_user_id_fk"',
+    );
+    expect(deletionMigration).toContain("00000000-0000-0000-0000-000000000000");
+    expect(deletionMigration).not.toMatch(
+      /\b(?:TRUNCATE|DELETE FROM|CASCADE)\b/i,
+    );
   });
 });

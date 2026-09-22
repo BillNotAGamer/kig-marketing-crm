@@ -140,4 +140,44 @@ describe("UserManagement Component Vietnamese Localization", () => {
     expect(screen.queryByText("Enable user")).not.toBeInTheDocument();
     expect(screen.queryByText("Reset password")).not.toBeInTheDocument();
   });
+
+  it("renders 'Xóa vĩnh viễn' button only for ADMIN actor, never for HEAD or DEPUTY", () => {
+    // 1. ADMIN actor sees 'Xóa vĩnh viễn' buttons
+    const { unmount } = render(
+      <UserManagement
+        users={mockUsers}
+        actorId="admin-operator"
+        actorRole="ADMIN"
+      />,
+    );
+    expect(
+      screen.getAllByRole("button", { name: "Xóa vĩnh viễn" }),
+    ).toHaveLength(2);
+    unmount();
+
+    // 2. HEAD actor does NOT see 'Xóa vĩnh viễn' buttons
+    const { unmount: unmountHead } = render(
+      <UserManagement
+        users={mockUsers}
+        actorId="head-operator"
+        actorRole="HEAD"
+      />,
+    );
+    expect(
+      screen.queryByRole("button", { name: "Xóa vĩnh viễn" }),
+    ).not.toBeInTheDocument();
+    unmountHead();
+
+    // 3. DEPUTY actor does NOT see 'Xóa vĩnh viễn' buttons
+    render(
+      <UserManagement
+        users={mockUsers}
+        actorId="deputy-operator"
+        actorRole="DEPUTY"
+      />,
+    );
+    expect(
+      screen.queryByRole("button", { name: "Xóa vĩnh viễn" }),
+    ).not.toBeInTheDocument();
+  });
 });

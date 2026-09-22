@@ -9,11 +9,21 @@ export const userPermissions = [
   "user:change-role",
   "user:reset-password",
   "user:change-own-password",
+  "user:delete",
 ] as const;
 export type Permission = (typeof userPermissions)[number];
 const grants: Record<AppRole, readonly Permission[]> = {
   ADMIN: userPermissions,
-  HEAD: userPermissions,
+  HEAD: [
+    "user:create",
+    "user:read",
+    "user:update",
+    "user:disable",
+    "user:enable",
+    "user:change-role",
+    "user:reset-password",
+    "user:change-own-password",
+  ],
   DEPUTY: [
     "user:create",
     "user:read",

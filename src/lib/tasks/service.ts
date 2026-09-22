@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, or, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, ne, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { task, user, auditLog, notification, brand } from "../../db/schema";
 import type { Task } from "../../db/schema/tasks";
@@ -11,6 +11,7 @@ import { authorizedActor, type Actor } from "../auth/session-core";
 import { AccessError } from "../auth/permissions";
 import type { ServerEnv } from "../env-schema";
 import { administrationLock } from "../users/service";
+import { DELETED_USER_SENTINEL_ID } from "../users/sentinel";
 import {
   canAssignTask,
   canReadTask,
@@ -206,9 +207,7 @@ export function taskService(db: AuthDatabase, env: ServerEnv) {
         ).map(dto),
       ),
     getTask: (headers: Headers, id: string) =>
-      execute(headers, false, async (tx) =>
-        getDTO(tx, taskIdSchema.parse(id)),
-      ),
+      execute(headers, false, async (tx) => getDTO(tx, taskIdSchema.parse(id))),
     listAssignees: (headers: Headers) =>
       execute(headers, false, async (tx, actor): Promise<AssigneeOption[]> =>
         (
@@ -217,6 +216,7 @@ export function taskService(db: AuthDatabase, env: ServerEnv) {
             .from(user)
             .where(
               and(
+                ne(user.id, DELETED_USER_SENTINEL_ID),
                 eq(user.banned, false),
                 actor.role === "ADMIN" || actor.role === "HEAD"
                   ? undefined

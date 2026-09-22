@@ -48,6 +48,12 @@ export const userCommandSchema = z.discriminatedUnion("operation", [
       password: passwordSchema,
     })
     .strict(),
+  z
+    .object({
+      operation: z.literal("delete-user"),
+      confirmationEmail: emailSchema.optional(),
+    })
+    .strict(),
 ]);
 export const ownPasswordSchema = z
   .object({

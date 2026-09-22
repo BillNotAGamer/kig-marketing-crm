@@ -110,7 +110,8 @@ export function auditService(db: AuthDatabase, env: ServerEnv) {
       const items: AuditLogItemDto[] = rows.map((r) => ({
         id: r.id,
         actorUserId: r.actorUserId,
-        actorName: r.actorName || (r.actorUserId ? "Hệ thống" : "Hệ thống"),
+        actorName:
+          r.actorName || (r.actorUserId ? "Người dùng đã xóa" : "Hệ thống"),
         action: r.action,
         entityType: r.entityType,
         entityId: r.entityId,

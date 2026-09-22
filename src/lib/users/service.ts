@@ -1,5 +1,15 @@
-import { and, eq, desc } from "drizzle-orm";
-import { user, session, auditLog, account } from "../../db/schema";
+import { and, count, eq, desc, isNull, ne } from "drizzle-orm";
+import {
+  user,
+  session,
+  auditLog,
+  account,
+  task,
+  taskAsset,
+  taskDailyUpdate,
+  brand,
+  notification,
+} from "../../db/schema";
 import type { ServerEnv } from "../env-schema";
 import {
   createAuth,
@@ -23,7 +33,9 @@ import {
   canDisableUser,
   canEnableUser,
   canResetPassword,
+  canPermanentlyDeleteUser,
 } from "./policy";
+import { DELETED_USER_SENTINEL_ID } from "./sentinel";
 export { administrationLock, ADMINISTRATION_ADVISORY_LOCK_ID } from "./locks";
 import { administrationLock } from "./locks";
 export function userSummary(value: typeof user.$inferSelect) {
@@ -44,7 +56,8 @@ type AuditAction =
   | "DISABLE_USER"
   | "ENABLE_USER"
   | "RESET_PASSWORD"
-  | "CHANGE_OWN_PASSWORD";
+  | "CHANGE_OWN_PASSWORD"
+  | "DELETE_USER";
 async function writeAudit(
   tx: Transaction,
   actorId: string,
@@ -108,6 +121,25 @@ async function preserveActiveAdminOrHead(
   }
 }
 
+async function preserveActiveAdminForDelete(
+  tx: Transaction,
+  target: typeof user.$inferSelect,
+) {
+  if (target.role === "ADMIN" && !target.banned) {
+    const activeAdmins = await tx
+      .select({ id: user.id })
+      .from(user)
+      .where(and(eq(user.role, "ADMIN"), eq(user.banned, false)));
+
+    if (activeAdmins.length <= 1) {
+      throw new AccessError(
+        409,
+        "The final ACTIVE ADMIN cannot be permanently deleted.",
+      );
+    }
+  }
+}
+
 export function userService(db: AuthDatabase, env: ServerEnv) {
   async function execute<T>(
     headers: Headers,
@@ -129,7 +161,13 @@ export function userService(db: AuthDatabase, env: ServerEnv) {
   return {
     list: (headers: Headers) =>
       execute(headers, "user:read", async (tx, _auth, actor) =>
-        (await tx.select().from(user).orderBy(desc(user.createdAt)))
+        (
+          await tx
+            .select()
+            .from(user)
+            .where(ne(user.id, DELETED_USER_SENTINEL_ID))
+            .orderBy(desc(user.createdAt))
+        )
           .filter((target) => canViewManagedUser(actor, target))
           .map(userSummary),
       ),
@@ -163,13 +201,132 @@ export function userService(db: AuthDatabase, env: ServerEnv) {
               ? "user:update"
               : command.operation === "disable"
                 ? "user:disable"
-                : "user:enable";
+                : command.operation === "delete-user"
+                  ? "user:delete"
+                  : "user:enable";
       return execute(headers, permission, async (tx, auth, actor) => {
         const target = await targetUser(tx, targetId);
+        if (targetId === DELETED_USER_SENTINEL_ID) {
+          throw new AccessError(403, "Cannot manage system sentinel.");
+        }
         if (!canViewManagedUser(actor, target)) {
           throw new AccessError(404, "User not found.");
         }
         const before = userSummary(target);
+
+        if (command.operation === "delete-user") {
+          if (!canPermanentlyDeleteUser(actor, target)) {
+            throw new AccessError(403, "Access denied.");
+          }
+          if (command.confirmationEmail) {
+            if (
+              command.confirmationEmail.toLowerCase().trim() !==
+              target.email.toLowerCase().trim()
+            ) {
+              throw new AccessError(
+                400,
+                "Email xác nhận không khớp với email của người dùng.",
+              );
+            }
+          }
+
+          await preserveActiveAdminForDelete(tx, target);
+
+          const [openTasks] = await tx
+            .select({ count: count() })
+            .from(task)
+            .where(
+              and(
+                eq(task.assignedToId, targetId),
+                eq(task.status, "OPEN"),
+                isNull(task.deletedAt),
+              ),
+            );
+          const openCount = Number(openTasks?.count || 0);
+          if (openCount > 0) {
+            throw new AccessError(
+              409,
+              `Người dùng đang có ${openCount} công việc chưa hoàn thành. Vui lòng chuyển giao công việc trước khi xóa.`,
+            );
+          }
+
+          // 1. Repoint historical Task references to sentinel
+          await tx
+            .update(task)
+            .set({ createdById: DELETED_USER_SENTINEL_ID })
+            .where(eq(task.createdById, targetId));
+
+          await tx
+            .update(task)
+            .set({ assignedToId: DELETED_USER_SENTINEL_ID })
+            .where(eq(task.assignedToId, targetId));
+
+          await tx
+            .update(task)
+            .set({ deletedById: DELETED_USER_SENTINEL_ID })
+            .where(eq(task.deletedById, targetId));
+
+          // 2. Repoint Task Asset references to sentinel
+          await tx
+            .update(taskAsset)
+            .set({ createdById: DELETED_USER_SENTINEL_ID })
+            .where(eq(taskAsset.createdById, targetId));
+
+          await tx
+            .update(taskAsset)
+            .set({ deletedById: DELETED_USER_SENTINEL_ID })
+            .where(eq(taskAsset.deletedById, targetId));
+
+          // 3. Repoint Daily Progress references to sentinel
+          await tx
+            .update(taskDailyUpdate)
+            .set({ userId: DELETED_USER_SENTINEL_ID })
+            .where(eq(taskDailyUpdate.userId, targetId));
+
+          await tx
+            .update(taskDailyUpdate)
+            .set({ correctedById: DELETED_USER_SENTINEL_ID })
+            .where(eq(taskDailyUpdate.correctedById, targetId));
+
+          // 4. NULL brand.created_by_id
+          await tx
+            .update(brand)
+            .set({ createdById: null })
+            .where(eq(brand.createdById, targetId));
+
+          // 5. Delete private notifications
+          await tx
+            .delete(notification)
+            .where(eq(notification.userId, targetId));
+
+          // 6. Delete sessions
+          await tx.delete(session).where(eq(session.userId, targetId));
+
+          // 7. Delete Better Auth account rows
+          await tx.delete(account).where(eq(account.userId, targetId));
+
+          // 8. Write audit log entry (before deleting user row)
+          await tx.insert(auditLog).values({
+            actorUserId: actor.id,
+            action: "DELETE_USER",
+            entityType: "user",
+            entityId: targetId,
+            beforeData: before,
+            afterData: null,
+            metadata: {
+              deletedBy: actor.id,
+              deletedByEmail: actor.email,
+              deletedByRole: actor.role,
+              targetRole: target.role,
+              targetEmail: target.email,
+            },
+          });
+
+          // 9. Delete user row
+          await tx.delete(user).where(eq(user.id, targetId));
+
+          return { success: true, deletedUserId: targetId };
+        }
         let action: AuditAction;
         switch (command.operation) {
           case "update":

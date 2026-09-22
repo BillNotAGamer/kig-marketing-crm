@@ -1,5 +1,6 @@
 import type { Actor } from "../auth/session-core";
 import type { AppRole } from "../auth/roles";
+import { DELETED_USER_SENTINEL_ID } from "./sentinel";
 
 /**
  * Checks whether an actor role is permitted to create a user with the target role.
@@ -45,7 +46,8 @@ export function allowedCreationRoles(actorRole: AppRole): AppRole[] {
 
 /**
  * Checks whether an actor can view a target user in User Management.
- * - ADMIN: sees all users
+ * - System sentinel is strictly hidden from User Management for all roles.
+ * - ADMIN: sees all real users
  * - HEAD: sees self, DEPUTY, and EMPLOYEE (hides ADMIN and peer HEADs)
  * - DEPUTY: sees EMPLOYEE users only
  * - EMPLOYEE: sees no users (cannot access user management)
@@ -54,6 +56,9 @@ export function canViewManagedUser(
   actor: Actor,
   target: { id: string; role: string },
 ): boolean {
+  if (target.id === DELETED_USER_SENTINEL_ID) {
+    return false;
+  }
   switch (actor.role) {
     case "ADMIN":
       return true;
@@ -73,7 +78,8 @@ export function canViewManagedUser(
 
 /**
  * Checks whether an actor has authority to manage a specific target user.
- * - ADMIN: can manage all users (including self)
+ * - Sentinel user cannot be managed by any actor.
+ * - ADMIN: can manage all real users (including self)
  * - HEAD: can manage DEPUTY, EMPLOYEE, and self (for own profile update)
  * - DEPUTY: can manage EMPLOYEE only
  * - EMPLOYEE: cannot manage any user
@@ -82,6 +88,9 @@ export function canManageTarget(
   actor: Actor,
   target: { id: string; role: string },
 ): boolean {
+  if (target.id === DELETED_USER_SENTINEL_ID) {
+    return false;
+  }
   if (actor.id === target.id) {
     return actor.role === "ADMIN" || actor.role === "HEAD";
   }
@@ -96,6 +105,27 @@ export function canManageTarget(
     default:
       return false;
   }
+}
+
+/**
+ * Checks whether an actor is authorized to permanently delete a target user.
+ * - Only ADMIN may delete users.
+ * - HEAD, DEPUTY, EMPLOYEE cannot delete any user.
+ * - Sentinel account cannot be deleted.
+ * - Additional transactional invariant checks (final active ADMIN, open tasks)
+ *   are enforced inside the deletion transaction under advisory lock.
+ */
+export function canPermanentlyDeleteUser(
+  actor: Actor,
+  target: { id: string; role: string },
+): boolean {
+  if (actor.role !== "ADMIN") {
+    return false;
+  }
+  if (target.id === DELETED_USER_SENTINEL_ID) {
+    return false;
+  }
+  return ["ADMIN", "HEAD", "DEPUTY", "EMPLOYEE"].includes(target.role);
 }
 
 /**

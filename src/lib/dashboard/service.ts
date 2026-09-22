@@ -1,6 +1,7 @@
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, isNull, ne, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { task, taskDailyUpdate, user } from "../../db/schema";
+import { DELETED_USER_SENTINEL_ID } from "../users/sentinel";
 import {
   createAuth,
   type AuthDatabase,
@@ -97,7 +98,8 @@ export function dashboardService(
           role: user.role,
           banned: user.banned,
         })
-        .from(user);
+        .from(user)
+        .where(ne(user.id, DELETED_USER_SENTINEL_ID));
 
       const mappedTasks: TaskRecordForDashboard[] = taskRows.map((t) => ({
         id: t.id,

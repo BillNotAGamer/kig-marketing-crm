@@ -1,6 +1,7 @@
 import type { Actor } from "../auth/session-core";
 import { AccessError } from "../auth/permissions";
 import type { AppRole } from "../auth/roles";
+import { DELETED_USER_SENTINEL_ID } from "../users/sentinel";
 
 export const taskPermissions = [
   "task:create-self",
@@ -35,11 +36,12 @@ export function requireTaskPermission(
   if (!permitsTask(actor.role, permission))
     throw new AccessError(403, "Access denied.");
 }
+
 export function canAssignTask(
   actor: Actor,
   target: { id: string; role: string; banned: boolean },
 ) {
-  if (target.banned) return false;
+  if (target.id === DELETED_USER_SENTINEL_ID || target.banned) return false;
   if (target.id === actor.id)
     return permitsTask(actor.role, "task:create-self");
   return (

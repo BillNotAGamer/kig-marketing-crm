@@ -9,15 +9,12 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import { user } from "./auth";
 
 export const auditLog = pgTable(
   "audit_log",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    actorUserId: uuid("actor_user_id").references(() => user.id, {
-      onDelete: "restrict",
-    }),
+    actorUserId: uuid("actor_user_id"),
     action: varchar("action", { length: 100 }).notNull(),
     entityType: varchar("entity_type", { length: 50 }).notNull(),
     entityId: varchar("entity_id", { length: 255 }),

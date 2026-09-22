@@ -1,10 +1,19 @@
 "use client";
 import { useState, type FormEvent } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { userSummary } from "@/lib/users/service";
 import type { AppRole } from "@/lib/auth/roles";
 import {
@@ -14,6 +23,7 @@ import {
   canDisableUser,
   canEnableUser,
   canResetPassword,
+  canPermanentlyDeleteUser,
 } from "@/lib/users/policy";
 import { roleDisplay, formatDisplayDate } from "@/lib/ui-labels";
 
@@ -34,6 +44,9 @@ export function UserManagement({
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [deletingUser, setDeletingUser] = useState<Summary | null>(null);
+  const [confirmEmail, setConfirmEmail] = useState("");
+  const [deleteError, setDeleteError] = useState("");
 
   const actor = { id: actorId, role: actorRole, name: "", email: "" };
   const creationRoles = allowedCreationRoles(actorRole);
@@ -79,6 +92,39 @@ export function UserManagement({
     );
     if (operation) body.operation = operation;
     void send(url, body, form);
+  }
+
+  async function handlePermanentDelete() {
+    if (!deletingUser) return;
+    setBusy(true);
+    setDeleteError("");
+    try {
+      const result = await fetch(`/api/users/${deletingUser.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          operation: "delete-user",
+          confirmationEmail: confirmEmail,
+        }),
+      });
+      const data = await result.json();
+      if (!result.ok) {
+        setDeleteError(data.error || "Không thể xóa người dùng.");
+        return;
+      }
+      if (deletingUser.id === actorId) {
+        router.push("/login");
+        return;
+      }
+      setMessage("Đã xóa vĩnh viễn tài khoản người dùng.");
+      setDeletingUser(null);
+      setConfirmEmail("");
+      router.refresh();
+    } catch {
+      setDeleteError("Không thể thực hiện yêu cầu. Vui lòng thử lại.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -262,11 +308,111 @@ export function UserManagement({
                     </Button>
                   </form>
                 )}
+                {canPermanentlyDeleteUser(actor, target) && (
+                  <div className="border-t pt-2">
+                    <Button
+                      variant="destructive"
+                      className="min-h-11"
+                      disabled={busy}
+                      onClick={() => {
+                        setDeletingUser(value);
+                        setConfirmEmail("");
+                        setDeleteError("");
+                      }}
+                    >
+                      Xóa vĩnh viễn
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           );
         })}
       </div>
+
+      <Dialog
+        open={Boolean(deletingUser)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeletingUser(null);
+            setConfirmEmail("");
+            setDeleteError("");
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Xác nhận xóa vĩnh viễn tài khoản</DialogTitle>
+            <DialogDescription className="space-y-2 pt-2">
+              <span className="block font-medium text-destructive">
+                Thao tác này sẽ xóa vĩnh viễn tài khoản người dùng và thông tin
+                đăng nhập khỏi hệ thống. Thao tác này KHÔNG THỂ HOÀN TÁC.
+              </span>
+              {deletingUser && deletingUser.id === actorId && (
+                <span className="block rounded-md border border-destructive/40 bg-destructive/10 p-2 font-medium text-destructive">
+                  CẢNH BÁO: Bạn đang xóa chính tài khoản Quản trị viên của mình.
+                  Sau khi xóa, phiên làm việc hiện tại sẽ kết thúc ngay lập tức.
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          {deletingUser && (
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label htmlFor="confirm-delete-email">
+                  Nhập chính xác email <strong>{deletingUser.email}</strong> để
+                  xác nhận:
+                </Label>
+                <Input
+                  id="confirm-delete-email"
+                  type="email"
+                  autoComplete="off"
+                  value={confirmEmail}
+                  onChange={(e) => setConfirmEmail(e.target.value)}
+                  placeholder={deletingUser.email}
+                  disabled={busy}
+                />
+              </div>
+
+              {deleteError && (
+                <div
+                  role="alert"
+                  className="space-y-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
+                >
+                  <p>{deleteError}</p>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href="/tasks">Xem công việc</Link>
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              disabled={busy}
+              onClick={() => {
+                setDeletingUser(null);
+                setConfirmEmail("");
+                setDeleteError("");
+              }}
+            >
+              Hủy
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={
+                busy || !deletingUser || confirmEmail !== deletingUser.email
+              }
+              onClick={() => void handlePermanentDelete()}
+            >
+              Xóa vĩnh viễn
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

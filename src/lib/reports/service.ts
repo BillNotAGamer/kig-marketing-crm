@@ -1,5 +1,6 @@
-import { and, eq, gte, isNull, lte, sql } from "drizzle-orm";
+import { and, eq, gte, isNull, lte, ne, sql } from "drizzle-orm";
 import { task, taskDailyUpdate, user } from "../../db/schema";
+import { DELETED_USER_SENTINEL_ID } from "../users/sentinel";
 import {
   createAuth,
   type AuthDatabase,
@@ -101,7 +102,8 @@ export function reportsService(
           role: user.role,
           banned: user.banned,
         })
-        .from(user);
+        .from(user)
+        .where(ne(user.id, DELETED_USER_SENTINEL_ID));
 
       const mappedReports: RawProgressReportForReport[] = reportRows.map(
         (r) => ({

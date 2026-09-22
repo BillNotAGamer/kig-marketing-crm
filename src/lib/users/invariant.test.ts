@@ -52,6 +52,27 @@ function checkInvariant(
   }
 }
 
+/**
+ * Pure simulation of the transaction-safe preserveActiveAdminForDelete invariant.
+ * This mirrors the exact logic executed inside userService.command during delete-user under advisory lock.
+ */
+function checkDeleteInvariant(usersInDb: MockUser[], targetId: string) {
+  const target = usersInDb.find((u) => u.id === targetId);
+  if (!target) throw new AccessError(404, "User not found.");
+
+  if (target.role === "ADMIN" && !target.banned) {
+    const activeAdmins = usersInDb.filter(
+      (u) => u.role === "ADMIN" && !u.banned,
+    );
+    if (activeAdmins.length <= 1) {
+      throw new AccessError(
+        409,
+        "The final ACTIVE ADMIN cannot be permanently deleted.",
+      );
+    }
+  }
+}
+
 describe("Transition Invariant (preserveActiveAdminOrHead)", () => {
   describe("STATE A: 0 active ADMINs", () => {
     it("refuses to demote the final active HEAD", () => {
@@ -227,6 +248,155 @@ describe("Transition Invariant (preserveActiveAdminOrHead)", () => {
       expect(rejected).toHaveLength(1);
 
       // Remaining active ADMIN count is exactly 1, never 0
+      const activeAdmins = sharedDb.filter(
+        (u) => u.role === "ADMIN" && !u.banned,
+      );
+      expect(activeAdmins).toHaveLength(1);
+    });
+  });
+});
+
+describe("Permanent User Deletion Invariant (preserveActiveAdminForDelete)", () => {
+  it("refuses to delete the final active ADMIN (1 active ADMIN)", () => {
+    const db: MockUser[] = [
+      { id: "admin-1", role: "ADMIN", banned: false },
+      { id: "head-1", role: "HEAD", banned: false },
+      { id: "emp-1", role: "EMPLOYEE", banned: false },
+    ];
+
+    expect(() => checkDeleteInvariant(db, "admin-1")).toThrowError(
+      new AccessError(
+        409,
+        "The final ACTIVE ADMIN cannot be permanently deleted.",
+      ),
+    );
+  });
+
+  it("allows deleting an active ADMIN when 2 active ADMINs exist", () => {
+    const db: MockUser[] = [
+      { id: "admin-1", role: "ADMIN", banned: false },
+      { id: "admin-2", role: "ADMIN", banned: false },
+      { id: "head-1", role: "HEAD", banned: false },
+    ];
+
+    expect(() => checkDeleteInvariant(db, "admin-1")).not.toThrow();
+  });
+
+  it("allows deleting a banned (inactive) ADMIN even if only 1 active ADMIN remains", () => {
+    const db: MockUser[] = [
+      { id: "admin-active", role: "ADMIN", banned: false },
+      { id: "admin-banned", role: "ADMIN", banned: true },
+    ];
+
+    expect(() => checkDeleteInvariant(db, "admin-banned")).not.toThrow();
+  });
+
+  it("allows deleting HEAD, DEPUTY, or EMPLOYEE regardless of ADMIN count", () => {
+    const db: MockUser[] = [
+      { id: "admin-1", role: "ADMIN", banned: false },
+      { id: "head-1", role: "HEAD", banned: false },
+      { id: "deputy-1", role: "DEPUTY", banned: false },
+      { id: "emp-1", role: "EMPLOYEE", banned: false },
+    ];
+
+    expect(() => checkDeleteInvariant(db, "head-1")).not.toThrow();
+    expect(() => checkDeleteInvariant(db, "deputy-1")).not.toThrow();
+    expect(() => checkDeleteInvariant(db, "emp-1")).not.toThrow();
+  });
+
+  describe("Concurrent Permanent Deletion Safety Simulation", () => {
+    it("prevents two concurrent delete requests from reducing active ADMINs to 0", async () => {
+      const sharedDb: MockUser[] = [
+        { id: "admin-1", role: "ADMIN", banned: false },
+        { id: "admin-2", role: "ADMIN", banned: false },
+      ];
+
+      let lockAcquired = false;
+
+      async function executeDeleteAdmin(adminId: string): Promise<string> {
+        while (lockAcquired) {
+          await new Promise((resolve) => setTimeout(resolve, 5));
+        }
+        lockAcquired = true;
+
+        try {
+          checkDeleteInvariant(sharedDb, adminId);
+          // Delete from shared DB
+          const index = sharedDb.findIndex((u) => u.id === adminId);
+          if (index !== -1) sharedDb.splice(index, 1);
+          return "SUCCESS";
+        } finally {
+          lockAcquired = false;
+        }
+      }
+
+      const results = await Promise.allSettled([
+        executeDeleteAdmin("admin-1"),
+        executeDeleteAdmin("admin-2"),
+      ]);
+
+      const fulfilled = results.filter((r) => r.status === "fulfilled");
+      const rejected = results.filter((r) => r.status === "rejected");
+
+      // Exactly one succeeds, exactly one fails with 409
+      expect(fulfilled).toHaveLength(1);
+      expect(rejected).toHaveLength(1);
+
+      const activeAdmins = sharedDb.filter(
+        (u) => u.role === "ADMIN" && !u.banned,
+      );
+      expect(activeAdmins).toHaveLength(1);
+    });
+
+    it("prevents simultaneous delete ADMIN A and demote ADMIN B from reducing active ADMINs to 0", async () => {
+      const sharedDb: MockUser[] = [
+        { id: "admin-1", role: "ADMIN", banned: false },
+        { id: "admin-2", role: "ADMIN", banned: false },
+      ];
+
+      let lockAcquired = false;
+
+      async function executeDelete(adminId: string): Promise<string> {
+        while (lockAcquired) {
+          await new Promise((resolve) => setTimeout(resolve, 5));
+        }
+        lockAcquired = true;
+        try {
+          checkDeleteInvariant(sharedDb, adminId);
+          const index = sharedDb.findIndex((u) => u.id === adminId);
+          if (index !== -1) sharedDb.splice(index, 1);
+          return "SUCCESS";
+        } finally {
+          lockAcquired = false;
+        }
+      }
+
+      async function executeDemote(adminId: string): Promise<string> {
+        while (lockAcquired) {
+          await new Promise((resolve) => setTimeout(resolve, 5));
+        }
+        lockAcquired = true;
+        try {
+          checkInvariant(sharedDb, adminId, "HEAD");
+          const target = sharedDb.find((u) => u.id === adminId)!;
+          target.role = "HEAD";
+          return "SUCCESS";
+        } finally {
+          lockAcquired = false;
+        }
+      }
+
+      const results = await Promise.allSettled([
+        executeDelete("admin-1"),
+        executeDemote("admin-2"),
+      ]);
+
+      const fulfilled = results.filter((r) => r.status === "fulfilled");
+      const rejected = results.filter((r) => r.status === "rejected");
+
+      expect(fulfilled).toHaveLength(1);
+      expect(rejected).toHaveLength(1);
+
       const activeAdmins = sharedDb.filter(
         (u) => u.role === "ADMIN" && !u.banned,
       );

@@ -12,9 +12,18 @@ import {
 import { bootstrapSchema } from "../users/bootstrap";
 
 describe("Phase 2 role and command validation", () => {
-  it.each(userPermissions)("grants %s to ADMIN and HEAD", (permission) => {
-    expect(hasPermission("ADMIN", permission)).toBe(true);
-    expect(hasPermission("HEAD", permission)).toBe(true);
+  it.each(userPermissions.filter((p) => p !== "user:delete"))(
+    "grants %s to ADMIN and HEAD",
+    (permission) => {
+      expect(hasPermission("ADMIN", permission)).toBe(true);
+      expect(hasPermission("HEAD", permission)).toBe(true);
+    },
+  );
+  it("grants user:delete strictly to ADMIN", () => {
+    expect(hasPermission("ADMIN", "user:delete")).toBe(true);
+    expect(hasPermission("HEAD", "user:delete")).toBe(false);
+    expect(hasPermission("DEPUTY", "user:delete")).toBe(false);
+    expect(hasPermission("EMPLOYEE", "user:delete")).toBe(false);
   });
   it("grants correct permissions to DEPUTY and EMPLOYEE", () => {
     for (const permission of [

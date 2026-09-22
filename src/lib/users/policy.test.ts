@@ -10,7 +10,9 @@ import {
   canDisableUser,
   canEnableUser,
   canResetPassword,
+  canPermanentlyDeleteUser,
 } from "./policy";
+import { DELETED_USER_SENTINEL_ID } from "./sentinel";
 import { appRoleValues, type AppRole } from "../auth/roles";
 import { permitsTask, canAssignTask } from "../tasks/policy";
 import { canAddAsset, canRemoveAsset } from "../assets/model";
@@ -370,5 +372,105 @@ describe("Operational Capability Inheritance", () => {
     expect(canReadBrands("HEAD")).toBe(true);
     expect(canReadBrands("DEPUTY")).toBe(true);
     expect(canReadBrands("EMPLOYEE")).toBe(true);
+  });
+});
+
+describe("Permanent User Deletion Authorization Matrix (canPermanentlyDeleteUser)", () => {
+  const admin = makeActor("ADMIN", "admin-1");
+  const head = makeActor("HEAD", "head-1");
+  const deputy = makeActor("DEPUTY", "deputy-1");
+  const employee = makeActor("EMPLOYEE", "emp-1");
+
+  const targets = {
+    admin: { id: "admin-2", role: "ADMIN" },
+    head: { id: "head-2", role: "HEAD" },
+    deputy: { id: "deputy-2", role: "DEPUTY" },
+    employee: { id: "emp-2", role: "EMPLOYEE" },
+    selfAdmin: { id: "admin-1", role: "ADMIN" },
+    sentinel: { id: DELETED_USER_SENTINEL_ID, role: "EMPLOYEE" },
+  };
+
+  it("allows ADMIN to delete EMPLOYEE, DEPUTY, HEAD, peer ADMIN, and self", () => {
+    expect(canPermanentlyDeleteUser(admin, targets.employee)).toBe(true);
+    expect(canPermanentlyDeleteUser(admin, targets.deputy)).toBe(true);
+    expect(canPermanentlyDeleteUser(admin, targets.head)).toBe(true);
+    expect(canPermanentlyDeleteUser(admin, targets.admin)).toBe(true);
+    expect(canPermanentlyDeleteUser(admin, targets.selfAdmin)).toBe(true);
+  });
+
+  it("strictly forbids ADMIN from deleting the sentinel user", () => {
+    expect(canPermanentlyDeleteUser(admin, targets.sentinel)).toBe(false);
+  });
+
+  it("strictly forbids HEAD from deleting any user (including IDOR targets)", () => {
+    expect(canPermanentlyDeleteUser(head, targets.employee)).toBe(false);
+    expect(canPermanentlyDeleteUser(head, targets.deputy)).toBe(false);
+    expect(canPermanentlyDeleteUser(head, targets.head)).toBe(false);
+    expect(canPermanentlyDeleteUser(head, targets.admin)).toBe(false);
+    expect(canPermanentlyDeleteUser(head, { id: "head-1", role: "HEAD" })).toBe(
+      false,
+    );
+    expect(canPermanentlyDeleteUser(head, targets.sentinel)).toBe(false);
+  });
+
+  it("strictly forbids DEPUTY from deleting any user", () => {
+    expect(canPermanentlyDeleteUser(deputy, targets.employee)).toBe(false);
+    expect(canPermanentlyDeleteUser(deputy, targets.deputy)).toBe(false);
+    expect(canPermanentlyDeleteUser(deputy, targets.head)).toBe(false);
+    expect(canPermanentlyDeleteUser(deputy, targets.admin)).toBe(false);
+    expect(
+      canPermanentlyDeleteUser(deputy, { id: "deputy-1", role: "DEPUTY" }),
+    ).toBe(false);
+    expect(canPermanentlyDeleteUser(deputy, targets.sentinel)).toBe(false);
+  });
+
+  it("strictly forbids EMPLOYEE from deleting any user", () => {
+    expect(canPermanentlyDeleteUser(employee, targets.employee)).toBe(false);
+    expect(canPermanentlyDeleteUser(employee, targets.deputy)).toBe(false);
+    expect(canPermanentlyDeleteUser(employee, targets.head)).toBe(false);
+    expect(canPermanentlyDeleteUser(employee, targets.admin)).toBe(false);
+    expect(
+      canPermanentlyDeleteUser(employee, { id: "emp-1", role: "EMPLOYEE" }),
+    ).toBe(false);
+    expect(canPermanentlyDeleteUser(employee, targets.sentinel)).toBe(false);
+  });
+});
+
+describe("Sentinel User Protection Across Policies", () => {
+  const admin = makeActor("ADMIN", "admin-1");
+  const head = makeActor("HEAD", "head-1");
+  const deputy = makeActor("DEPUTY", "deputy-1");
+  const employee = makeActor("EMPLOYEE", "emp-1");
+  const sentinelTarget = { id: DELETED_USER_SENTINEL_ID, role: "EMPLOYEE" };
+
+  it("hides sentinel from canViewManagedUser for all roles", () => {
+    expect(canViewManagedUser(admin, sentinelTarget)).toBe(false);
+    expect(canViewManagedUser(head, sentinelTarget)).toBe(false);
+    expect(canViewManagedUser(deputy, sentinelTarget)).toBe(false);
+    expect(canViewManagedUser(employee, sentinelTarget)).toBe(false);
+  });
+
+  it("forbids managing sentinel with canManageTarget for all roles", () => {
+    expect(canManageTarget(admin, sentinelTarget)).toBe(false);
+    expect(canManageTarget(head, sentinelTarget)).toBe(false);
+    expect(canManageTarget(deputy, sentinelTarget)).toBe(false);
+    expect(canManageTarget(employee, sentinelTarget)).toBe(false);
+  });
+
+  it("forbids assigning tasks to sentinel via canAssignTask", () => {
+    expect(
+      canAssignTask(admin, {
+        id: DELETED_USER_SENTINEL_ID,
+        role: "EMPLOYEE",
+        banned: true,
+      }),
+    ).toBe(false);
+    expect(
+      canAssignTask(admin, {
+        id: DELETED_USER_SENTINEL_ID,
+        role: "EMPLOYEE",
+        banned: false,
+      }),
+    ).toBe(false);
   });
 });
